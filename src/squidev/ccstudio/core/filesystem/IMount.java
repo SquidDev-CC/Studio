@@ -8,6 +8,9 @@ import java.io.OutputStream;
  */
 public interface IMount {
 	public static final int MINIMUM_FILE_SIZE = 512;
+	public static final int MAX_SPACE = 1000000; // 1 Megabyte (Sort of)
+
+	public static final String ACCESS_DENIED = "Access denied";
 
 	String getLabel(FilePath filePath);
 

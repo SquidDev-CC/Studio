@@ -16,10 +16,11 @@ public class DirectoryMount implements IMount {
 	public String base;
 	public String label;
 	public boolean readOnly;
+	public int maxSpace = MAX_SPACE;
 
 	public Config config;
 
-	private long usedSpace;
+	private long usedSpace = 0L;
 
 	public DirectoryMount(String base, boolean readOnly, String label, Config config) {
 		this.base = base;
@@ -27,8 +28,7 @@ public class DirectoryMount implements IMount {
 		this.readOnly = readOnly;
 
 		this.config = config;
-		usedSpace = measureUsedSpace(new File(base));
-
+		if(caresAboutSpace()) usedSpace = measureUsedSpace(new File(base));
 	}
 
 	@Override
@@ -71,14 +71,16 @@ public class DirectoryMount implements IMount {
 	public long getSize(FilePath filePath) {
 		File real = realPath(filePath);
 		if(!real.exists()) throw new IllegalArgumentException("No such file");
-		if(real.isFile()) return 0L;
+		if(real.isDirectory()) return 0L;
 
 		return real.length();
 	}
 
 	@Override
 	public long getRemainingSpace() {
-		return 0;
+		if(readOnly) return 0L;
+		if(config.storageLimit) return config.remainingSpace;
+		return Math.max(maxSpace - usedSpace, 0);
 	}
 
 	@Override
@@ -98,11 +100,45 @@ public class DirectoryMount implements IMount {
 
 	@Override
 	public void makeDirectory(FilePath filePath) {
+		if(readOnly) throw new IllegalArgumentException(ACCESS_DENIED);
+
+		File real = realPath(filePath);
+		if(real.exists()) {
+			if(real.isFile()) throw new IllegalArgumentException("File exists");
+		} else {
+			if(config.storageLimit && getRemainingSpace() < MINIMUM_FILE_SIZE) throw new IllegalArgumentException("Out of space");
+
+			if(real.mkdirs()) {
+				usedSpace += MINIMUM_FILE_SIZE;
+			} else {
+				throw new RuntimeException(ACCESS_DENIED); // TODO: Better exception?
+			}
+		}
 
 	}
 	@Override
 	public void delete(FilePath filePath) {
+		if(readOnly) throw new IllegalArgumentException(ACCESS_DENIED);
 
+	}
+
+	protected void deleteRecursivly(File file) {
+		long size;
+		if(file.isDirectory()) {
+			for(File sub : file.listFiles()) {
+				deleteRecursivly(sub);
+			}
+
+			size = 0L;
+		} else {
+			size = file.length();
+		}
+
+		if(file.delete()) {
+			if(config.storageLimit) usedSpace -= Math.max(MINIMUM_FILE_SIZE, size);
+		} else {
+			throw new IllegalArgumentException(ACCESS_DENIED);
+		}
 	}
 
 	/**
@@ -133,5 +169,13 @@ public class DirectoryMount implements IMount {
 			return size;
 		}
 		return Math.max(file.length(), MINIMUM_FILE_SIZE);
+	}
+
+	/**
+	 * If this drive should care about space
+	 * @return
+	 */
+	public boolean caresAboutSpace() {
+		return !readOnly && config.storageLimit;
 	}
 }
