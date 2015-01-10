@@ -1,7 +1,5 @@
 package squidev.ccstudio.core.filesystem;
 
-import org.apache.bcel.classfile.Field;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

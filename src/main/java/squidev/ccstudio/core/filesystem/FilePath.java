@@ -15,6 +15,11 @@ public class FilePath implements Comparable<FilePath> {
 	public static final String DIRECTORY_SEPARATOR = "/";
 
 	/**
+	 * The character used to separate directories
+	 */
+	public static final char DIRECTORY_SEPARATOR_CHAR = '/';
+
+	/**
 	 * Characters that should not appear in a path
 	 */
 	public static final HashSet<Character> SPECIAL_CHARS =  new HashSet<Character>(Arrays.asList('"', ':', '<', '>', '?', '|'));
@@ -52,9 +57,9 @@ public class FilePath implements Comparable<FilePath> {
 	 */
 	public void setPath(String value) {
 		_Path = strip(
-				value.replace(File.separator, DIRECTORY_SEPARATOR)
+				value.replace("\\", DIRECTORY_SEPARATOR)
 						// Don't know if I want to do this:
-						.replace(DIRECTORY_SEPARATOR + DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR),
+						.replaceAll(DIRECTORY_SEPARATOR + "+", DIRECTORY_SEPARATOR),
 
 				//Remove trailing or leading slashes
 				DIRECTORY_SEPARATOR
@@ -74,7 +79,7 @@ public class FilePath implements Comparable<FilePath> {
 	 * @return
 	 */
 	public String getEntityName() {
-		if (isRoot()) return null;
+		if (isRoot()) return "";
 
 		String name = getPath();
 		int endOfName = name.length();
@@ -95,6 +100,9 @@ public class FilePath implements Comparable<FilePath> {
 		int lookaheadCount = parentPath.length();
 		int index = parentPath.lastIndexOf(DIRECTORY_SEPARATOR, lookaheadCount - 1);
 
+		if(index == -1) {
+			return new FilePath("");
+		}
 		return new FilePath(parentPath.substring(0, index));
 	}
 
@@ -103,7 +111,7 @@ public class FilePath implements Comparable<FilePath> {
 	 * @param paths A series of paths to use
 	 */
 	public FilePath(String... paths) {
-		setPath(join(paths, DIRECTORY_SEPARATOR));
+		setPath(join(paths, DIRECTORY_SEPARATOR_CHAR));
 	}
 
 	// Modification
@@ -213,20 +221,20 @@ public class FilePath implements Comparable<FilePath> {
 
 	/**
 	 * append a string onto this path
-	 * @param RelativePath The path to append
+	 * @param relativePath The path to append
 	 * @return The new path
 	 */
-	public FilePath appendPath(String RelativePath) {
-		return new FilePath(getPath(), RelativePath);
+	public FilePath appendPath(String relativePath) {
+		return new FilePath(getPath(), relativePath);
 	}
 
 	/**
 	 * append a {@see FilePath} onto this path
-	 * @param RelativePath The path to append
+	 * @param relativePath The path to append
 	 * @return The new path
 	 */
-	public FilePath appendPath(FilePath RelativePath) {
-		return new FilePath(getPath(), RelativePath.getPath());
+	public FilePath appendPath(FilePath relativePath) {
+		return new FilePath(getPath(), relativePath.getPath());
 	}
 
 	// Parent/Children
@@ -243,7 +251,7 @@ public class FilePath implements Comparable<FilePath> {
 		String path = getPath();
 		String childPath = child.getPath();
 
-		return path.length() != childPath.length() && childPath.startsWith(path);
+		return path.length() != childPath.length() && childPath.startsWith(path + DIRECTORY_SEPARATOR);
 	}
 
 	/**
@@ -307,6 +315,10 @@ public class FilePath implements Comparable<FilePath> {
 
 	public boolean equals(FilePath other) {
 		return getPath().equals(other.getPath());
+	}
+
+	public boolean equals(String other) {
+		return getPath().equals(other);
 	}
 
 	public boolean equals(Object other) {

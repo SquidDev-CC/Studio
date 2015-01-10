@@ -105,4 +105,5 @@ local.properties
 # Custom
 ##############
 docs/
-luaj/lib
+/luaj/lib
+/target
