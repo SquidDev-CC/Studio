@@ -33,7 +33,7 @@ public class FilePath implements Comparable<FilePath> {
 	//-----------------------------------------------------------------------
 
 	/**
-	 * Get the path
+	 * getMount the path
 	 * @return The current path or null if empty
 	 *
 	 * @see #setPath(String)
@@ -70,7 +70,7 @@ public class FilePath implements Comparable<FilePath> {
 	}
 
 	/**
-	 * Get the top element of the path
+	 * getMount the top element of the path
 	 * @return
 	 */
 	public String getEntityName() {
@@ -83,7 +83,7 @@ public class FilePath implements Comparable<FilePath> {
 	}
 
 	/**
-	 * Get the parent path of this element
+	 * getMount the parent path of this element
 	 * @return
 	 *
 	 * @throws java.lang.IllegalStateException

@@ -1,5 +1,6 @@
 package squidev.ccstudio.core.filesystem;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -19,15 +20,15 @@ public interface IMount {
 	boolean exists(FilePath filePath);
 	boolean isDirectory(FilePath filePath);
 
-	Iterable<FilePath> list(FilePath filePath);
+	Iterable<FilePath> list(FilePath filePath) throws IOException;
 
-	long getSize(FilePath filePath);
-	long getRemainingSpace();
+	long getSize(FilePath filePath) throws IOException;
+	long getRemainingSpace(FilePath filePath);
 
-	InputStream read(FilePath FileP);
-	OutputStream write(FilePath FileP);
-	OutputStream append(FilePath filePath);
+	InputStream read(FilePath FileP)throws IOException;
+	OutputStream write(FilePath FileP)throws IOException;
+	OutputStream append(FilePath filePath)throws IOException;
 
-	void makeDirectory(FilePath filePath);
-	void delete(FilePath filePath);
+	void makeDirectory(FilePath filePath) throws IOException;
+	void delete(FilePath filePath) throws IOException;
 }

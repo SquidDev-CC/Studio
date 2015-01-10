@@ -52,10 +52,9 @@ public class DirectoryMount implements IMount {
 	}
 
 	@Override
-	public Iterable<FilePath> list(FilePath filePath)
-	{
+	public Iterable<FilePath> list(FilePath filePath) throws IOException {
 		File real = realPath(filePath);
-		if(!real.exists()) throw new IllegalArgumentException("Not a directory");
+		if(!real.exists()) throw new IOException("Not a directory");
 
 		FilePath realFilePath = new FilePath(real.getPath());
 
@@ -68,15 +67,19 @@ public class DirectoryMount implements IMount {
 	}
 
 	@Override
-	public long getSize(FilePath filePath) {
+	public long getSize(FilePath filePath) throws IOException {
 		File real = realPath(filePath);
-		if(!real.exists()) throw new IllegalArgumentException("No such file");
+		if(!real.exists()) throw new IOException("No such file");
 		if(real.isDirectory()) return 0L;
 
 		return real.length();
 	}
 
 	@Override
+	public long getRemainingSpace(FilePath filePath) {
+		return getRemainingSpace();
+	}
+
 	public long getRemainingSpace() {
 		if(readOnly) return 0L;
 		if(config.storageLimit) return config.remainingSpace;
@@ -99,7 +102,7 @@ public class DirectoryMount implements IMount {
 	}
 
 	@Override
-	public void makeDirectory(FilePath filePath) {
+	public void makeDirectory(FilePath filePath) throws IOException {
 		if(readOnly) throw new IllegalArgumentException(ACCESS_DENIED);
 
 		File real = realPath(filePath);
@@ -111,18 +114,24 @@ public class DirectoryMount implements IMount {
 			if(real.mkdirs()) {
 				usedSpace += MINIMUM_FILE_SIZE;
 			} else {
-				throw new RuntimeException(ACCESS_DENIED); // TODO: Better exception?
+				throw new IOException(ACCESS_DENIED);
 			}
 		}
 
 	}
 	@Override
-	public void delete(FilePath filePath) {
-		if(readOnly) throw new IllegalArgumentException(ACCESS_DENIED);
+	public void delete(FilePath filePath) throws IOException {
+		if(readOnly || filePath.isRoot()) throw new IOException(ACCESS_DENIED);
 
+		File file = realPath(filePath);
+		if(file.exists()) {
+			deleteRecursivly(file);
+		}
 	}
 
-	protected void deleteRecursivly(File file) {
+	protected void deleteRecursivly(File file)
+		throws IOException
+	{
 		long size;
 		if(file.isDirectory()) {
 			for(File sub : file.listFiles()) {
@@ -137,7 +146,7 @@ public class DirectoryMount implements IMount {
 		if(file.delete()) {
 			if(config.storageLimit) usedSpace -= Math.max(MINIMUM_FILE_SIZE, size);
 		} else {
-			throw new IllegalArgumentException(ACCESS_DENIED);
+			throw new IOException(ACCESS_DENIED);
 		}
 	}
 
