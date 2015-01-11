@@ -20,7 +20,36 @@
 			<artifactId>bcel</artifactId>
 			<version>5.2</version>
 		</dependency>
+		<dependency>
+			<groupId>asm</groupId>
+			<artifactId>asm</artifactId>
+			<version>3.3.1</version>
+		</dependency>
+
 	</dependencies>
+
+
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+		</plugins>
+
+		<resources>
+			<resource>
+				<directory>luaj/src/core</directory>
+			</resource>
+			<resource>
+				<directory>luaj/src/jse</directory>
+			</resource>
+		</resources>
+	</build>
 
 
 </project>
