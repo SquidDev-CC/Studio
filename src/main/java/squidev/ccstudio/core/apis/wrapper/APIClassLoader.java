@@ -17,4 +17,9 @@ class APIClassLoader extends ClassLoader {
 
 		return super.findClass(name);
 	}
+
+	public Class findClass(Class<?> obj) {
+		byte[] bytes = APIBuilder.createAPI(obj);
+		return defineClass(obj.getName() + SUFFIX, bytes, 0, bytes.length);
+	}
 }
