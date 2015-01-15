@@ -20,29 +20,64 @@
 			<artifactId>bcel</artifactId>
 			<version>5.2</version>
 		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-all</artifactId>
+			<version>5.0.3</version>
+		</dependency>
 	</dependencies>
-
 
 
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.0</version>
 				<configuration>
+					<!-- This should be 1.7 but most IDEs don't like it -->
 					<source>1.8</source>
 					<target>1.8</target>
+
+					<!-- We (ab)use lambdas in the tests -->
+					<testSource>1.8</testSource>
+					<testTarget>1.8</testTarget>
 				</configuration>
 			</plugin>
-		</plugins>
 
-		<resources>
-			<resource>
-				<directory>luaj/src/core</directory>
-			</resource>
-			<resource>
-				<directory>luaj/src/jse</directory>
-			</resource>
-		</resources>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.9.1</version>
+				<executions>
+					<execution>
+						<id>add-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>luaj/src/core</source>
+								<source>luaj/src/jse</source>
+							</sources>
+						</configuration>
+					</execution>
+					<execution>
+						<id>add-test-source</id>
+						<phase>generate-test-sources</phase>
+						<goals>
+							<goal>add-test-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>luaj/test/junit</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
 	</build>
 
 
