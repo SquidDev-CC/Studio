@@ -3,10 +3,7 @@ package squidev.ccstudio.core.apis.wrapper;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.objectweb.asm.*;
-import org.objectweb.asm.util.CheckClassAdapter;
-import squidev.ccstudio.core.Config;
 
-import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,6 +13,8 @@ import java.util.Map;
 import static org.objectweb.asm.Opcodes.*;
 import static squidev.ccstudio.core.asm.AsmUtils.TinyMethod;
 import static squidev.ccstudio.core.asm.AsmUtils.constantOpcode;
+
+// import org.objectweb.asm.util.CheckClassAdapter;
 /**
  * Builds ASM code to call an API
  *
@@ -361,7 +360,7 @@ public class APIBuilder {
 
 	public byte[] toByteArray() {
 		byte[] bytes = writer.toByteArray();
-		if (Config.verifySources) CheckClassAdapter.verify(new ClassReader(bytes), false, new PrintWriter(System.out));
+		// if (Config.verifySources) CheckClassAdapter.verify(new ClassReader(bytes), false, new PrintWriter(System.out));
 
 		return bytes;
 	}

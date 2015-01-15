@@ -107,3 +107,4 @@ local.properties
 docs/
 /luaj/lib
 /target
+/build
