@@ -15,8 +15,8 @@ public class Invoke extends CCAPI<Invoke.SubThing>{
 		methodNames = METHOD_NAMES;
 	}
 
-	public Varargs invoke(Varargs args) {
-		switch(opcode) {
+	public Varargs invoke(Varargs args, int index) {
+		switch(index) {
 			case 0:
 				instance.noArgsNoReturn();
 				return LuaValue.NONE;

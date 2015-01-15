@@ -28,7 +28,7 @@ public class APIBuilder {
 	public static final String PARENT_NAME = Type.getInternalName(CCAPI.class);
 
 	public static final String VARARGS = Type.getDescriptor(Varargs.class);
-	public static final String INVOKE_SIGNATURE = "(" + VARARGS + ")" + VARARGS;
+	public static final String INVOKE_SIGNATURE = "(" + VARARGS + "I)" + VARARGS;
 
 	/**
 	 * Map Java classes to converters
@@ -148,8 +148,8 @@ public class APIBuilder {
 			mv = cw.visitMethod(ACC_PUBLIC, "invoke", INVOKE_SIGNATURE, null, null);
 			mv.visitCode();
 
-			mv.visitVarInsn(ALOAD, 0);
-			mv.visitFieldInsn(GETFIELD, className, "opcode", "I");
+			// Get index
+			mv.visitVarInsn(ILOAD, 2);
 
 			Label defaultLabel = new Label();
 
