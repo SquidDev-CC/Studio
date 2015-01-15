@@ -1,56 +1,18 @@
 package squidev.ccstudio.core.apis;
 
-import org.luaj.vm2.*;
-import org.luaj.vm2.lib.VarArgFunction;
+import org.luaj.vm2.LuaTable;
+import org.luaj.vm2.LuaValue;
 
 /**
- * Basic wrapper for APIs build with {@see APIBuilder}
+ * Core computercraft API
  */
-public abstract class CCAPI<T> {
-	public final T instance;
-
-	protected String[] methodNames = new String[0];
-	protected String[] names = new String[0];
-
-	protected LuaTable table;
-
-	public CCAPI(T inst) {
-		instance = inst;
-	}
-
+public abstract class CCAPI implements ICCObject {
 	/**
-	 * Returns the variables this API should be stored in
-	 * @return List of variable names
+	 * Get the names this API should be stored in
 	 */
-	public String[] getNames() {
-		return names;
-	}
+	public abstract String[] getNames();
 
-	public abstract Varargs invoke(Varargs args, int index);
-
-	/**
-	 * Convert this to a Lua table
-	 * @return The API object
-	 */
-	public LuaTable getTable() {
-		if(table == null) {
-			table = new LuaTable();
-			try {
-				for ( int i=0, n=methodNames.length; i<n; i++ ) {
-					final int index = i;
-					LuaFunction f = new VarArgFunction() {
-						public Varargs invoke(Varargs args) {
-							return CCAPI.this.invoke(args, index);
-						}
-					};
-					table.set(methodNames[i], f);
-				}
-			} catch ( Exception e ) {
-				throw new LuaError( "bind failed: "+e );
-			}
-		}
-		return table;
-	}
+	public abstract LuaTable getTable();
 
 	/**
 	 * Bind this API to an environment

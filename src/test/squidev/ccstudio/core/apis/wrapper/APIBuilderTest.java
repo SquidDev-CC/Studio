@@ -1,17 +1,14 @@
 package squidev.ccstudio.core.apis.wrapper;
 
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
-import squidev.ccstudio.core.apis.CCAPI;
 import squidev.ccstudio.core.testutils.ExpectException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class APIBuilderTest {
 	private static LuaTable table;
@@ -21,10 +18,13 @@ public class APIBuilderTest {
 		APIClassLoader loader = new APIClassLoader();
 		Class<?> wrapped = loader.findClass(EmbedClass.class);
 
-		CCAPI api = (CCAPI) wrapped.getConstructor(EmbedClass.class).newInstance(new EmbedClass());
+		APIWrapper api = (APIWrapper) wrapped.getConstructor(EmbedClass.class).newInstance(new EmbedClass());
 		table = api.getTable();
 	}
 
+	/**
+	 * Test that functions return what the are meant to
+	 */
 	@Test
 	public void testFunctions() {
 		assertEquals(2, table.get("twoArgsOneReturn").invoke(LuaValue.valueOf(1), LuaValue.valueOf(1)).todouble(1), 0);
@@ -35,6 +35,18 @@ public class APIBuilderTest {
 		assertEquals(2, table.get("varArgsLuaReturn").invoke(LuaValue.valueOf(2)).toint(1));
 	}
 
+	/**
+	 * Test that annotations work
+	 */
+	@Test
+	public void testAnnotation() {
+		assertEquals(table.get("varArgsLuaReturn"), table.get("one"));
+		assertEquals(table.get("varArgsLuaReturn"), table.get("two"));
+	}
+
+	/**
+	 * Test that the correct exceptions are thrown
+	 */
 	@Test
 	public void testErrors() {
 		ExpectException.expect(LuaError.class, "Expected number, number",
@@ -53,9 +65,11 @@ public class APIBuilderTest {
 		public double twoArgsOneReturn(double a, int b) { return a + b; }
 
 		@LuaFunction
-		public LuaValue noArgsLuaReturn() { return LuaValue.TRUE; }
+		public LuaValue noArgsLuaReturn() {
+			return LuaValue.TRUE;
+		}
 
-		@LuaFunction
+		@LuaFunction(names = {"one", "two", "varArgsLuaReturn"})
 		public Varargs varArgsLuaReturn(Varargs args) { return args; }
 	}
 }

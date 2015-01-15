@@ -11,7 +11,7 @@ class APIClassLoader extends ClassLoader {
 			// We want to remove the _GenAPI part of the string
 			String actualName = name.substring(0, name.length() - SUFFIX.length());
 
-			byte[] bytes = APIBuilder.createAPI(Class.forName(actualName));
+			byte[] bytes = new APIBuilder(Class.forName(actualName)).toByteArray();
 			return defineClass(name, bytes, 0, bytes.length);
 		}
 
@@ -19,7 +19,7 @@ class APIClassLoader extends ClassLoader {
 	}
 
 	public Class findClass(Class<?> obj) {
-		byte[] bytes = APIBuilder.createAPI(obj);
+		byte[] bytes = new APIBuilder(obj).toByteArray();
 		return defineClass(obj.getName() + SUFFIX, bytes, 0, bytes.length);
 	}
 }

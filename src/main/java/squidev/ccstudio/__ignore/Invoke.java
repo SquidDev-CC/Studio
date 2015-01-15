@@ -3,13 +3,13 @@ package squidev.ccstudio.__ignore;
 import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
-import squidev.ccstudio.core.apis.CCAPI;
+import squidev.ccstudio.core.apis.wrapper.APIWrapper;
 
 /**
  * For checking invoking functions
  */
-public class Invoke extends CCAPI<Invoke.SubThing>{
-	protected static final String[] METHOD_NAMES = {"noArgsNoReturn", "twoArgsOneReturn", "noArgsLuaReturn", "varArgsLuaReturn"};
+public class Invoke extends APIWrapper<Invoke.SubThing> {
+	protected static final String[][] METHOD_NAMES = {{"noArgsNoReturn"}, {"twoArgsOneReturn"}, {"noArgsLuaReturn"}, {"varArgsLuaReturn"}};
 	public Invoke(SubThing inst) {
 		super(inst);
 		methodNames = METHOD_NAMES;
