@@ -10,14 +10,25 @@ import java.io.PrintStream;
  */
 public class TerminalOutput implements IOutput {
 	public static final String START_ESCAPE = "\27[";
+
 	public static final String CLEAR = START_ESCAPE + "2J";
 	public static final String CLEAR_LINE = START_ESCAPE + "2K";
+
+	public static final String HIDE_CURSOR = START_ESCAPE + "25l";
+	public static final String SHOW_CURSOR = START_ESCAPE + "25h";
 
 	public final PrintStream output;
 	public final InputStream input;
 
+	public TerminalOutput() {
+		output = System.out;
+		input = System.in;
+	}
+
 	/**
 	 * Maps a CC color to a ANSI color
+	 *
+	 * This is much faster than using a hash map
 	 * @param col The CC color to convert
 	 * @return The ANSI color
 	 */
@@ -44,10 +55,6 @@ public class TerminalOutput implements IOutput {
 		}
 	}
 
-	public TerminalOutput() {
-		output = System.out;
-		input = System.in;
-	}
 	/**
 	 * Write a string to the terminal
 	 *
@@ -96,7 +103,11 @@ public class TerminalOutput implements IOutput {
 	 */
 	@Override
 	public void setBlink(boolean blink) {
-
+		if (blink) {
+			output.print(SHOW_CURSOR);
+		} else {
+			output.print(HIDE_CURSOR);
+		}
 	}
 
 	/**
