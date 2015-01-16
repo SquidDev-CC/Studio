@@ -12,7 +12,11 @@ public abstract class CCAPI implements ICCObject {
 	 */
 	public abstract String[] getNames();
 
-	public abstract LuaTable getTable();
+	public LuaTable getTable() {
+		return getTable(null);
+	}
+
+	public abstract LuaTable getTable(LuaValue env);
 
 	/**
 	 * Bind this API to an environment
@@ -20,7 +24,7 @@ public abstract class CCAPI implements ICCObject {
 	public void bind(LuaValue env) {
 		String[] names = getNames();
 		if (names != null) {
-			LuaTable t = getTable();
+			LuaTable t = getTable(env);
 			for (String name : names) {
 				env.set(name, t);
 			}
