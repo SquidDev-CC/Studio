@@ -6,18 +6,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Show that this function is a lua function
+ * Show that this function is a Lua API
  */
-@Target(ElementType.METHOD)
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface LuaFunction {
+public @interface LuaAPI {
 	/**
-	 * The names of the Lua Function, defaults to the actual function name
+	 * The names of the Lua API
 	 */
 	public String[] value() default "";
-
-	/**
-	 * If this function returns multiple values
-	 */
-	public boolean multiReturn() default false;
 }

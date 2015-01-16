@@ -3,7 +3,10 @@ package squidev.ccstudio.core.apis.wrapper;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.objectweb.asm.*;
+import org.objectweb.asm.util.CheckClassAdapter;
+import squidev.ccstudio.core.Config;
 
+import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +17,6 @@ import static org.objectweb.asm.Opcodes.*;
 import static squidev.ccstudio.core.asm.AsmUtils.TinyMethod;
 import static squidev.ccstudio.core.asm.AsmUtils.constantOpcode;
 
-// import org.objectweb.asm.util.CheckClassAdapter;
 /**
  * Builds ASM code to call an API
  *
@@ -39,7 +41,7 @@ public class APIBuilder {
 	static {
 		Class<?> luaValueClass = LuaValue.class;
 
-		Map<Class<?>, TinyMethod> toLua = new HashMap<Class<?>, TinyMethod>();
+		Map<Class<?>, TinyMethod> toLua = new HashMap<>();
 		TO_LUA = toLua;
 
 		toLua.put(boolean.class, TinyMethod.tryConstruct(luaValueClass, "valueOf", boolean.class));
@@ -47,7 +49,7 @@ public class APIBuilder {
 		toLua.put(double.class, TinyMethod.tryConstruct(luaValueClass, "valueOf", double.class));
 		toLua.put(String.class, TinyMethod.tryConstruct(luaValueClass, "valueOf", String.class));
 
-		Map<Class<?>, TinyMethod> fromLua = new HashMap<Class<?>, TinyMethod>();
+		Map<Class<?>, TinyMethod> fromLua = new HashMap<>();
 		FROM_LUA = fromLua;
 
 		fromLua.put(boolean.class, TinyMethod.tryConstruct(luaValueClass, "toboolean"));
@@ -71,6 +73,11 @@ public class APIBuilder {
 	 * The whole name of the original name ('L' + ... + ';')
 	 */
 	final String originalWhole;
+
+	/**
+	 * Names that this should be set to
+	 */
+	String[] names = null;
 
 	/**
 	 * List of methods
@@ -100,16 +107,27 @@ public class APIBuilder {
 		);
 
 		// Declare METHOD_NAMES
-		writer.visitField(ACC_PROTECTED + ACC_FINAL + ACC_STATIC, "METHOD_NAMES", "[[Ljava/lang/String;", null, null);
+		writer.visitField(ACC_PRIVATE + ACC_FINAL + ACC_STATIC, "METHOD_NAMES", "[[Ljava/lang/String;", null, null);
+
+		// Declare NAMES
+		writer.visitField(ACC_PRIVATE + ACC_FINAL + ACC_STATIC, "NAMES", "[Ljava/lang/String;", null, null);
 
 		// Read all methods
-		methods = new ArrayList<LuaMethod>();
+		methods = new ArrayList<>();
 		for(Method m : reflection.getMethods()) {
 			if (m.isAnnotationPresent(LuaFunction.class)) {
 				// Append items to the list
 				methods.add(new LuaMethod(m));
 			}
+		}
 
+		if (reflection.isAnnotationPresent(LuaAPI.class)) {
+			names = reflection.getAnnotation(LuaAPI.class).value();
+			// If we have the LuaAPI annotation then
+			// we should ensure that this is set as an API
+			if (names == null || names.length == 0) {
+				names = new String[]{reflection.getSimpleName().toLowerCase()};
+			}
 		}
 
 		writeInit();
@@ -159,10 +177,30 @@ public class APIBuilder {
 		}
 
 		mv.visitFieldInsn(PUTSTATIC, className, "METHOD_NAMES", "[[Ljava/lang/String;");
+
+		// Visit names
+		if (names == null) {
+			mv.visitInsn(ACONST_NULL);
+		} else {
+			constantOpcode(mv, names.length);
+			mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+
+			counter = 0;
+			for (String name : names) {
+				mv.visitInsn(DUP);
+				constantOpcode(mv, counter);
+				mv.visitLdcInsn(name);
+				mv.visitInsn(AASTORE);
+
+				++counter;
+			}
+		}
+
+		mv.visitFieldInsn(PUTSTATIC, className, "NAMES", "[Ljava/lang/String;");
+
 		mv.visitInsn(RETURN);
 
-		mv.visitMaxs(7, 0);
-
+		mv.visitMaxs(0, 0);
 		mv.visitEnd();
 	}
 
@@ -183,6 +221,11 @@ public class APIBuilder {
 		mv.visitVarInsn(ALOAD, 0);
 		mv.visitFieldInsn(GETSTATIC, className, "METHOD_NAMES", "[[Ljava/lang/String;");
 		mv.visitFieldInsn(PUTFIELD, className, "methodNames", "[[Ljava/lang/String;");
+
+		// Set method API names
+		mv.visitVarInsn(ALOAD, 0);
+		mv.visitFieldInsn(GETSTATIC, className, "NAMES", "[Ljava/lang/String;");
+		mv.visitFieldInsn(PUTFIELD, className, "names", "[Ljava/lang/String;");
 
 		// And return
 		mv.visitInsn(RETURN);
@@ -360,7 +403,7 @@ public class APIBuilder {
 
 	public byte[] toByteArray() {
 		byte[] bytes = writer.toByteArray();
-		// if (Config.verifySources) CheckClassAdapter.verify(new ClassReader(bytes), false, new PrintWriter(System.out));
+		if (Config.verifySources) CheckClassAdapter.verify(new ClassReader(bytes), false, new PrintWriter(System.out));
 
 		return bytes;
 	}
@@ -386,7 +429,7 @@ public class APIBuilder {
 		 * @return A list of method names
 		 */
 		public String[] getLuaName() {
-			String[] luaName = function.names();
+			String[] luaName = function.value();
 			if (luaName == null || luaName.length == 0 || (luaName.length == 1 && luaName[0].isEmpty())) {
 				return new String[]{method.getName()};
 			}

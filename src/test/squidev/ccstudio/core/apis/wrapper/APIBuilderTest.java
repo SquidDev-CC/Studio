@@ -11,14 +11,15 @@ import squidev.ccstudio.core.testutils.ExpectException;
 import static org.junit.Assert.assertEquals;
 
 public class APIBuilderTest {
+	private static APIWrapper api;
 	private static LuaTable table;
 
 	@BeforeClass
 	public static void testCreateAPI() throws Exception {
 		APIClassLoader loader = new APIClassLoader();
-		Class<?> wrapped = loader.findClass(EmbedClass.class);
+		Class<?> wrapped = loader.makeClass(EmbedClass.class);
 
-		APIWrapper api = (APIWrapper) wrapped.getConstructor(EmbedClass.class).newInstance(new EmbedClass());
+		api = (APIWrapper) wrapped.getConstructor(EmbedClass.class).newInstance(new EmbedClass());
 		table = api.getTable();
 	}
 
@@ -42,6 +43,11 @@ public class APIBuilderTest {
 	public void testAnnotation() {
 		assertEquals(table.get("varArgsLuaReturn"), table.get("one"));
 		assertEquals(table.get("varArgsLuaReturn"), table.get("two"));
+
+		LuaTable env = new LuaTable();
+		api.bind(env);
+		assertEquals(table, env.get("embedded"));
+		assertEquals(table, env.get("embed"));
 	}
 
 	/**
@@ -57,6 +63,7 @@ public class APIBuilderTest {
 		);
 	}
 
+	@LuaAPI({"embedded", "embed"})
 	public static class EmbedClass {
 		@LuaFunction
 		public void noArgsNoReturn() { }
@@ -69,7 +76,7 @@ public class APIBuilderTest {
 			return LuaValue.TRUE;
 		}
 
-		@LuaFunction(names = {"one", "two", "varArgsLuaReturn"})
+		@LuaFunction(value = {"one", "two", "varArgsLuaReturn"})
 		public Varargs varArgsLuaReturn(Varargs args) { return args; }
 	}
 }

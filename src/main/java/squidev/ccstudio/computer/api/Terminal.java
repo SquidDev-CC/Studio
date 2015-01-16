@@ -62,8 +62,8 @@ public class Terminal {
 	}
 
 	@LuaFunction
-	public void setCursorPos(int x, int y) {
-		setInternalCursorPos(--x, --y);
+	public void setCursorPos(double x, double y) {
+		setInternalCursorPos((int) Math.floor(--x), (int) Math.floor(--y));
 	}
 
 	protected void setInternalCursorPos(int x, int y) {
@@ -93,15 +93,15 @@ public class Terminal {
 	}
 
 	@LuaFunction({"setTextColor", "setTextColour"})
-	public void setTextColor(int color) {
+	public void setTextColor(double color) {
 		output.setTextColor(validateColor(color));
 	}
 
-	public void setBackgroundColor(int color) {
+	public void setBackgroundColor(double color) {
 		output.setTextColor(validateColor(color));
 	}
 
-	protected int validateColor(int color) {
+	protected int validateColor(double color) {
 		int result = (int) Math.floor(Math.log(color) / Math.log(2));
 
 		if (result < 0 || result > 15) throw new LuaError("Colour out of range");

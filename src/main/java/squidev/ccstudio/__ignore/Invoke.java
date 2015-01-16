@@ -9,10 +9,12 @@ import squidev.ccstudio.core.apis.wrapper.APIWrapper;
  * For checking invoking functions
  */
 public class Invoke extends APIWrapper<Invoke.SubThing> {
-	protected static final String[][] METHOD_NAMES = {{"noArgsNoReturn"}, {"twoArgsOneReturn"}, {"noArgsLuaReturn"}, {"varArgsLuaReturn"}};
+	private static final String[][] METHOD_NAMES = {{"noArgsNoReturn"}, {"twoArgsOneReturn"}, {"noArgsLuaReturn"}, {"varArgsLuaReturn"}};
+	private static final String[] NAMES = null;
 	public Invoke(SubThing inst) {
 		super(inst);
 		methodNames = METHOD_NAMES;
+		names = NAMES;
 	}
 
 	public Varargs invoke(Varargs args, int index) {

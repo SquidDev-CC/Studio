@@ -18,9 +18,12 @@ public abstract class CCAPI implements ICCObject {
 	 * Bind this API to an environment
 	 */
 	public void bind(LuaValue env) {
-		LuaTable t = getTable();
-		for(String name : getNames()) {
-			env.set(name, t);
+		String[] names = getNames();
+		if (names != null) {
+			LuaTable t = getTable();
+			for (String name : names) {
+				env.set(name, t);
+			}
 		}
 	}
 }
