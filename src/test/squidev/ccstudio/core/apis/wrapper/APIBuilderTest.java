@@ -11,15 +11,21 @@ import squidev.ccstudio.core.testutils.ExpectException;
 import static org.junit.Assert.assertEquals;
 
 public class APIBuilderTest {
-	private static APIWrapper api;
 	private static LuaTable table;
+	private static LuaTable env;
 
 	@BeforeClass
 	public static void testCreateAPI() throws Exception {
 		APIClassLoader loader = new APIClassLoader();
 		Class<?> wrapped = loader.makeClass(EmbedClass.class);
 
-		api = (APIWrapper) wrapped.getConstructor(EmbedClass.class).newInstance(new EmbedClass());
+		APIWrapper api = (APIWrapper) wrapped.getConstructor(EmbedClass.class).newInstance(new EmbedClass());
+
+		// Set environment and bind to a variable
+		env = new LuaTable();
+		api.setEnv(env);
+		api.bind();
+
 		table = api.getTable();
 	}
 
@@ -44,8 +50,6 @@ public class APIBuilderTest {
 		assertEquals(table.get("varArgsLuaReturn"), table.get("one"));
 		assertEquals(table.get("varArgsLuaReturn"), table.get("two"));
 
-		LuaTable env = new LuaTable();
-		api.bind(env);
 		assertEquals(table, env.get("embedded"));
 		assertEquals(table, env.get("embed"));
 	}
@@ -63,6 +67,7 @@ public class APIBuilderTest {
 		);
 	}
 
+	@SuppressWarnings("UnusedDeclaration")
 	@LuaAPI({"embedded", "embed"})
 	public static class EmbedClass {
 		@LuaFunction

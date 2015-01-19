@@ -1,7 +1,9 @@
 package squidev.ccstudio.core.apis.wrapper;
 
-import org.luaj.vm2.*;
+import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaFunction;
+import org.luaj.vm2.LuaTable;
+import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.VarArgFunction;
 import squidev.ccstudio.core.apis.CCAPI;
 
@@ -13,6 +15,8 @@ public abstract class APIWrapper<T> extends CCAPI {
 
 	protected String[][] methodNames = null;
 	protected String[] names = null;
+
+	protected LuaTable table;
 
 	public APIWrapper(T inst) {
 		instance = inst;
@@ -30,13 +34,10 @@ public abstract class APIWrapper<T> extends CCAPI {
 
 	/**
 	 * Convert this to a Lua table
-	 * @param env The environment to use
 	 * @return The API object
 	 */
-	public LuaTable getTable(LuaValue env) {
+	protected LuaTable createTable() {
 		LuaTable table = new LuaTable();
-		table.setfenv(env);
-
 		try {
 			for (int i = 0, n = methodNames.length; i < n; i++) {
 				final int index = i;
