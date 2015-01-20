@@ -333,7 +333,9 @@ public class APIBuilder {
 				mv.visitFrame(F_SAME, 0, null, 0, null);
 				mv.visitTypeInsn(NEW, "org/luaj/vm2/LuaError");
 				mv.visitInsn(DUP);
-				mv.visitLdcInsn(builder.toString());
+
+				String error = method.getError();
+				mv.visitLdcInsn(error == null ? builder.toString() : error);
 				mv.visitMethodInsn(INVOKESPECIAL, "org/luaj/vm2/LuaError", "<init>", "(Ljava/lang/String;)V", false);
 				mv.visitInsn(ATHROW);
 
@@ -442,6 +444,16 @@ public class APIBuilder {
 		 */
 		public String getJavaName() {
 			return method.getName();
+		}
+
+		/**
+		 * Get the error to throw
+		 *
+		 * @return The error message to throw or null on nothing
+		 */
+		public String getError() {
+			String error = function.error();
+			return (error == null || error.isEmpty()) ? null : error;
 		}
 	}
 }

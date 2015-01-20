@@ -20,4 +20,6 @@ public @interface LuaFunction {
 	 * If this function returns multiple values
 	 */
 	public boolean multiReturn() default false;
+
+	public String error() default "";
 }

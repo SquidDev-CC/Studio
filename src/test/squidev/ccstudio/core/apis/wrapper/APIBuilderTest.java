@@ -6,6 +6,8 @@ import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
+import squidev.ccstudio.computer.Computer;
+import squidev.ccstudio.core.Config;
 import squidev.ccstudio.core.testutils.ExpectException;
 
 import static org.junit.Assert.assertEquals;
@@ -23,7 +25,7 @@ public class APIBuilderTest {
 
 		// Set environment and bind to a variable
 		env = new LuaTable();
-		api.setEnv(env);
+		api.setup(new Computer(new Config()), env);
 		api.bind();
 
 		table = api.getTable();
@@ -65,6 +67,10 @@ public class APIBuilderTest {
 			() -> table.get("twoArgsOneReturn").invoke(LuaValue.valueOf(1), LuaValue.valueOf(1.12)),
 			() -> table.get("twoArgsOneReturn").invoke(LuaValue.valueOf(1))
 		);
+
+		ExpectException.expect(LuaError.class, "I expected better of you!",
+				() -> table.get("testingError").invoke(LuaValue.valueOf(true), LuaValue.valueOf(1))
+		);
 	}
 
 	@SuppressWarnings("UnusedDeclaration")
@@ -75,6 +81,11 @@ public class APIBuilderTest {
 
 		@LuaFunction
 		public double twoArgsOneReturn(double a, int b) { return a + b; }
+
+		@LuaFunction(error = "I expected better of you!")
+		public double testingError(double a, int b) {
+			return a + b;
+		}
 
 		@LuaFunction
 		public LuaValue noArgsLuaReturn() {
