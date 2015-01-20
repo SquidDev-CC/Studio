@@ -5,6 +5,7 @@ import org.luaj.vm2.LuaFunction;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.VarArgFunction;
+import squidev.ccstudio.computer.Computer;
 
 /**
  * A wrapper for using one `invoke` method for
@@ -36,7 +37,11 @@ public abstract class CCAPIWrapper extends CCAPI {
 			for (int i = 0, n = methodNames.length; i < n; i++) {
 				final int index = i;
 				LuaFunction f = new VarArgFunction() {
+					protected Computer computer = CCAPIWrapper.this.computer;
+
 					public Varargs invoke(Varargs args) {
+						// Every time we call a method we should check the tryAbort function
+						computer.tryAbort();
 						return CCAPIWrapper.this.invoke(args, index);
 					}
 				};

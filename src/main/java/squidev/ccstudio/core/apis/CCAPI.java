@@ -2,13 +2,16 @@ package squidev.ccstudio.core.apis;
 
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
+import squidev.ccstudio.computer.Computer;
 
 /**
- * Core computercraft API
+ * Core CC API
  */
 public abstract class CCAPI implements ICCObject {
 	protected LuaValue env = LuaValue.NIL;
-	protected LuaTable table;
+	protected LuaTable table = null;
+
+	protected Computer computer = null;
 	/**
 	 * Get the names this API should be stored in
 	 */
@@ -46,15 +49,28 @@ public abstract class CCAPI implements ICCObject {
 	}
 
 	/**
-	 * Set the executor environment
-	 *
-	 * @param env The environment to use
+	 * Get the computer
+	 * @return The API's computer
 	 */
-	public void setEnv(LuaValue env) {
-		if (env != this.env) {
-			// Clear the table if not the same
-			this.env = env;
-			this.table = null;
+	public Computer getComputer() {
+		return computer;
+	}
+
+	/**
+	 * Setup the API
+	 *
+	 * @param computer    The computer to use
+	 * @param environment The
+	 */
+	public void setup(Computer computer, LuaValue environment) {
+		if (this.computer != null && this.computer != computer)
+			throw new IllegalStateException("Cannot change computer");
+		this.computer = computer;
+
+		if (env != environment) {
+			// If we change the environment then we need a new table
+			env = environment;
+			table = null;
 		}
 	}
 }
