@@ -11,7 +11,7 @@ import squidev.ccstudio.output.IOutput;
  * Implements the terminal API
  */
 @LuaAPI("term")
-public class Terminal {
+public class TerminalAPI {
 	public final int width;
 	public final int height;
 
@@ -22,7 +22,7 @@ public class Terminal {
 	public int cursorX = 0;
 	public int cursorY = 0;
 
-	public Terminal(int width, int height, boolean color, IOutput output) {
+	public TerminalAPI(int width, int height, boolean color, IOutput output) {
 		this.width = width;
 		this.height = height;
 
@@ -33,7 +33,7 @@ public class Terminal {
 		this.output = output;
 	}
 
-	public Terminal(IOutput output) {
+	public TerminalAPI(IOutput output) {
 		this(51, 19, true, output);
 	}
 

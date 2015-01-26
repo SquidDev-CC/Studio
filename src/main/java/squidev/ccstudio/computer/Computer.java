@@ -9,6 +9,10 @@ import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.ZeroArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
 import org.luaj.vm2.luajc.LuaJC;
+import squidev.ccstudio.computer.api.BitAPI;
+import squidev.ccstudio.computer.api.OSAPI;
+import squidev.ccstudio.computer.api.RedstoneAPI;
+import squidev.ccstudio.computer.api.TerminalAPI;
 import squidev.ccstudio.core.Config;
 import squidev.ccstudio.core.apis.CCAPI;
 import squidev.ccstudio.core.apis.wrapper.APIClassLoader;
@@ -92,7 +96,13 @@ public class Computer {
 		output = new TerminalOutput();
 
 		this.config = config;
-		this.environment = new ComputerEnvironment();
+		environment = new ComputerEnvironment();
+
+		// Load APIs
+		addAPI(new OSAPI(this));
+		addAPI(new RedstoneAPI(environment));
+		addAPI(new BitAPI());
+		addAPI(new TerminalAPI(this.output));
 	}
 
 	/**
@@ -264,5 +274,24 @@ public class Computer {
 			hardAbort = null;
 			throw new LuaError(abort);
 		}
+	}
+
+	/**
+	 * Add a {@see ComputerEvent}
+	 *
+	 * @param name The name of the event
+	 * @param args The arguments to pass
+	 */
+	public void queueEvent(String name, Varargs args) {
+		events.add(new ComputerEvent(this, name, args));
+	}
+
+	/**
+	 * Add a {@see ComputerEvent}
+	 *
+	 * @param args The arguments to pass, with the name as the first argument
+	 */
+	public void queueEvent(Varargs args) {
+		events.add(new ComputerEvent(this, args));
 	}
 }
