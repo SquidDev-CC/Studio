@@ -69,12 +69,12 @@ public class RedstoneAPI {
 	}
 
 	@LuaFunction({"getAnalogOutput", "getAnalogueOutput"})
-	public byte getAnalogueOutput(String side) {
+	public int getAnalogueOutput(String side) {
 		return environment.redstoneOutput[parseSide(side)];
 	}
 
 	@LuaFunction({"getAnalogInput", "getAnalogueInput"})
-	public byte getAnalogueInput(String side) {
+	public int getAnalogueInput(String side) {
 		return environment.redstoneInput[parseSide(side)];
 	}
 

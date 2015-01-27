@@ -309,7 +309,7 @@ public class APIBuilder {
 						// TODO: Make LuaValue handling better (support LuaNumber - for example)
 						name = arg.getSimpleName();
 					} else {
-						throw new RuntimeException("Cannot validate " + arg.getName());
+						throw new BuilderException("Cannot validate " + arg.getName(), method);
 					}
 
 					if (isLast) {
@@ -364,7 +364,8 @@ public class APIBuilder {
 					if (!arg.equals(LuaValue.class)) {
 						// Check if we have a converter
 						TinyMethod type = FROM_LUA.get(arg);
-						if (type == null) throw new RuntimeException("Cannot convert LuaValue to " + arg.getName());
+						if (type == null)
+							throw new BuilderException("Cannot convert LuaValue to " + arg.getName(), method);
 
 						type.inject(mv, INVOKEVIRTUAL);
 					}
@@ -383,7 +384,8 @@ public class APIBuilder {
 			} else if (!Varargs.class.isAssignableFrom(returns)) { // Don't need to convert if returning a LuaValue
 				// Check if we have a converter
 				TinyMethod type = TO_LUA.get(returns);
-				if (type == null) throw new RuntimeException("Cannot convert " + returns.getName() + " to LuaValue");
+				if (type == null)
+					throw new BuilderException("Cannot convert " + returns.getName() + " to LuaValue for ", method);
 
 				type.inject(mv, INVOKESTATIC);
 			}
@@ -454,6 +456,24 @@ public class APIBuilder {
 		public String getError() {
 			String error = function.error();
 			return (error == null || error.isEmpty()) ? null : error;
+		}
+	}
+
+	public static class BuilderException extends RuntimeException {
+		public BuilderException(String message) {
+			super(message);
+		}
+
+		public BuilderException(String message, Class javaClass) {
+			this(javaClass.getName() + ": " + message);
+		}
+
+		public BuilderException(String message, Method method) {
+			this(method.getDeclaringClass().getName() + ":" + method.getName() + ": " + message);
+		}
+
+		public BuilderException(String message, LuaMethod method) {
+			this(message, method.method);
 		}
 	}
 }

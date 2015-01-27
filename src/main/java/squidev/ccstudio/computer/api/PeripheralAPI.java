@@ -11,6 +11,7 @@ import squidev.ccstudio.core.peripheral.IPeripheral;
 /**
  * Handles peripheral methods
  */
+@SuppressWarnings("UnusedDeclaration")
 @LuaAPI("peripheral")
 public class PeripheralAPI {
 	IPeripheral[] peripherals = new IPeripheral[6];
@@ -34,6 +35,7 @@ public class PeripheralAPI {
 
 	@LuaFunction
 	public Varargs call(String side, String methodName, Varargs args) {
+		// TODO: Dynamically build the peripheral wrapper instead. This is not a great method
 		IPeripheral peripheral = getPeripheral(side);
 		if (peripheral == null) throw new LuaError("No peripheral attached");
 
