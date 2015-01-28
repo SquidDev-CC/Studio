@@ -1,5 +1,7 @@
 package squidev.ccstudio.computer;
 
+import squidev.ccstudio.core.Config;
+
 import java.io.Serializable;
 
 /**
@@ -28,4 +30,9 @@ public class ComputerEnvironment implements Serializable {
 	 * The time in milliseconds that this clock started
 	 */
 	public long startTime = System.currentTimeMillis();
+
+	/**
+	 * The config for this computer
+	 */
+	public Config config;
 }

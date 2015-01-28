@@ -22,15 +22,24 @@ public class Config {
 	public Set<String> blacklist = new HashSet<>();
 
 	/**
-	 * Max number of instructions to execute
+	 * Number of instructions to execute before attempting to yield
 	 */
 	public int coroutineHookCount = 100000;
 
 	/**
-	 * How to handle Too long without yielding errors
+	 * How to handle 'Too long without yielding' errors
 	 */
 	public TooLongYielding timeout = TooLongYielding.HARD;
 
+	/**
+	 * Limit of storage
+	 */
+	public long computerSpaceLimit = 1000000;
+
+	/**
+	 * Directory to store computers in
+	 */
+	public String computerDirectory = "computer";
 
 	public Config() {
 		blacklist.add("collectgarbage");

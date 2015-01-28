@@ -1,5 +1,10 @@
 package squidev.ccstudio.computer;
 
+import dan200.computercraft.api.filesystem.IMount;
+import dan200.computercraft.api.filesystem.IWritableMount;
+import dan200.computercraft.core.filesystem.FileMount;
+import dan200.computercraft.core.filesystem.FileSystem;
+import dan200.computercraft.core.filesystem.FileSystemException;
 import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaThread;
 import org.luaj.vm2.LuaValue;
@@ -17,10 +22,12 @@ import squidev.ccstudio.core.Config;
 import squidev.ccstudio.core.apis.CCAPI;
 import squidev.ccstudio.core.apis.wrapper.APIClassLoader;
 import squidev.ccstudio.core.apis.wrapper.LuaAPI;
+import squidev.ccstudio.core.utils.FileSystemUtilities;
 import squidev.ccstudio.output.IOutput;
 import squidev.ccstudio.output.terminal.TerminalOutput;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -91,6 +98,9 @@ public class Computer {
 	 */
 	protected String hardAbort = null;
 
+	protected FileSystem fileSystem;
+	protected IWritableMount rootMount;
+	protected IMount romMount;
 
 	public Computer(Config config) {
 		output = new TerminalOutput();
@@ -188,6 +198,14 @@ public class Computer {
 		for (String global : config.blacklist) {
 			globals.set(global, nil);
 		}
+	}
+
+	/**
+	 * Load the bios with the default bios
+	 */
+	public void loadBios() {
+		// TODO: Load this from config
+		loadBios(FileSystemUtilities.biosStream());
 	}
 
 	public void loadBios(String bios) {
@@ -293,5 +311,48 @@ public class Computer {
 	 */
 	public void queueEvent(Varargs args) {
 		events.add(new ComputerEvent(this, args));
+	}
+
+	/**
+	 * Get the mount that is used for writing
+	 *
+	 * @return The writing mount
+	 */
+	public IWritableMount getRootMount() {
+		// TODO: This should be possible to change
+		if (rootMount == null) {
+			try {
+				rootMount = new FileMount(
+						new File(config.computerDirectory, Integer.toString(environment.id)),
+						config.computerSpaceLimit
+				);
+			} catch (Exception ignored) {
+			}
+
+		}
+		return rootMount;
+	}
+
+	/**
+	 * Load the filesystem
+	 *
+	 * @return Success on creating it
+	 */
+	public boolean createFilesystem() {
+		try {
+			this.fileSystem = new FileSystem("hdd", this.getRootMount());
+
+			// TODO: This should be possible to change
+			if (romMount == null) romMount = FileSystemUtilities.getJarRomMount();
+
+			if (romMount != null) {
+				this.fileSystem.mount("rom", "rom", romMount);
+				return true;
+			} else {
+				return false;
+			}
+		} catch (FileSystemException e) {
+			return false;
+		}
 	}
 }
