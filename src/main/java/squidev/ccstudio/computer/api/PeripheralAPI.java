@@ -30,7 +30,7 @@ public class PeripheralAPI {
 	@LuaFunction
 	public Varargs getMethods(String side) {
 		IPeripheral peripheral = getPeripheral(side);
-		return peripheral == null ? LuaValue.NONE : LuaValue.listOf(peripheral.getObject().getTable().keys());
+		return peripheral == null ? LuaValue.NONE : LuaValue.listOf(peripheral.getTable().keys());
 	}
 
 	@LuaFunction
@@ -39,7 +39,7 @@ public class PeripheralAPI {
 		IPeripheral peripheral = getPeripheral(side);
 		if (peripheral == null) throw new LuaError("No peripheral attached");
 
-		LuaValue method = peripheral.getObject().getTable().get(methodName);
+		LuaValue method = peripheral.getTable().get(methodName);
 		if (method == null || method == LuaValue.NIL) throw new LuaError("No such method " + methodName);
 		return method.invoke(args);
 	}
