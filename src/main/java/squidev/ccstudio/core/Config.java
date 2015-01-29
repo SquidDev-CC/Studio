@@ -27,9 +27,19 @@ public class Config {
 	public int coroutineHookCount = 100000;
 
 	/**
-	 * How to handle 'Too long without yielding' errors
+	 * How to handle 'Too long without yielding' errors.
 	 */
-	public TooLongYielding timeout = TooLongYielding.HARD;
+	public TooLongYielding timeoutStyle = TooLongYielding.HARD;
+
+	/**
+	 * Length before first timeout errors occur
+	 */
+	public long timeoutLength = 5000L;
+
+	/**
+	 * Length before we attempt to abort the computer
+	 */
+	public long timeoutAbortLength = 1250L;
 
 	/**
 	 * Limit of storage
@@ -75,7 +85,11 @@ public class Config {
 		SOFT,
 
 		/**
-		 * Handle like ComputerCraft does
+		 * Handle like ComputerCraft does:
+		 *
+		 *  1. Run for 5 seconds, if still running soft abort (abort when yielding)
+		 *  2. Run for 1.25 seconds, if still running hard abort
+		 *  3. Run for 1.25 seconds, if still running then abort the thread
 		 */
 		HARD,
 

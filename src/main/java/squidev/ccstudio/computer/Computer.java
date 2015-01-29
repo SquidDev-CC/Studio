@@ -30,6 +30,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -65,7 +66,8 @@ public class Computer {
 	/**
 	 * The queue of items to resume with
 	 */
-	public final Queue<Runnable> events = new LinkedBlockingQueue<>(256);
+	public final BlockingQueue<Runnable> events = new LinkedBlockingQueue<>(256);
+	public final Queue<String> messages = new LinkedList<>();
 	/**
 	 * The event to filter on. Terminate events will still get through
 	 */
@@ -83,7 +85,7 @@ public class Computer {
 	/**
 	 * The thread code is run on
 	 */
-	protected Thread mainThread;
+	protected ComputerThread mainThread;
 	// The coroutine API
 	protected LuaValue coroutineCreate;
 	protected LuaValue coroutineYield;
@@ -234,7 +236,8 @@ public class Computer {
 	}
 
 	protected void startThread() {
-		mainThread = new Thread(new ComputerThread(this));
+		mainThread = new ComputerThread(this);
+		mainThread.start();
 	}
 
 	/**
@@ -292,6 +295,22 @@ public class Computer {
 			hardAbort = null;
 			throw new LuaError(abort);
 		}
+	}
+
+	/**
+	 * Set a hard abort message
+	 *
+	 * @param message The message to use
+	 */
+	public void hardAbort(String message) {
+		hardAbort = message;
+	}
+
+	/**
+	 * Set a soft abort message
+	 */
+	public void softAbort(String message) {
+		softAbort = message;
 	}
 
 	/**
