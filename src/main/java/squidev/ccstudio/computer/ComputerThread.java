@@ -5,7 +5,7 @@ import squidev.ccstudio.core.Config;
 import java.util.concurrent.BlockingQueue;
 
 /**
- * Runs a computer
+ * Runs a computer, handling yielding and what not
  */
 public class ComputerThread {
 	/**
@@ -30,6 +30,9 @@ public class ComputerThread {
 		state = State.STOPPED;
 	}
 
+	/**
+	 * Start the thread or prevent stopping
+	 */
 	public void start() {
 		synchronized (lock) {
 			switch (state) {
@@ -50,6 +53,44 @@ public class ComputerThread {
 					throw new IllegalArgumentException("Unexpected ComputerThread State");
 			}
 		}
+	}
+
+	/**
+	 * Prepare the thread for stopping
+	 *
+	 * @param terminate Terminate the thread
+	 */
+	public void stop(boolean terminate) {
+		synchronized (lock) {
+			switch (state) {
+				case RUNNING:
+				case STOPPING:
+					state = State.STOPPING;
+					if (terminate) {
+						thread.interrupt();
+					}
+					return;
+				case STOPPED:
+					// Prevent stopping the thread
+					return;
+				default:
+					throw new IllegalArgumentException("Unexpected ComputerThread State");
+			}
+		}
+	}
+
+	/**
+	 * Stop the thread
+	 */
+	public void stop() {
+		stop(false);
+	}
+
+	/**
+	 * Interrupt the thread and stop it
+	 */
+	public void terminate() {
+		stop(true);
 	}
 
 	/**
@@ -83,13 +124,13 @@ public class ComputerThread {
 
 		@Override
 		public void run() {
-			final Computer comp = computer;
-			final Config config = comp.config;
+			final Computer computer = ComputerThread.this.computer;
+			final Config config = computer.config;
 			final Config.TooLongYielding timeoutStyle = config.timeoutStyle;
 			final long timeoutLength = config.timeoutLength;
 			final long timeoutAbortLength = config.timeoutAbortLength;
 
-			final BlockingQueue<Runnable> events = computer.events;
+			final BlockingQueue<Runnable> events = ComputerThread.this.computer.events;
 
 			while (true) {
 				synchronized (lock) {
@@ -109,31 +150,29 @@ public class ComputerThread {
 						case SOFT:
 							worker.join(timeoutLength);
 							while (worker.isAlive()) {
-								comp.messages.add(yieldingMessage);
+								// Whilst the computer is alive we just keep pushing messages every time
+								// it takes too long
+								computer.messages.add(yieldingMessage);
 								worker.join(timeoutLength);
 							}
 							break;
 						case HARD:
-							comp.softAbort(yieldingMessage);
+							worker.join(timeoutLength);
+							computer.softAbort(yieldingMessage);
 							worker.join(timeoutAbortLength);
 
 							if (worker.isAlive()) {
-								comp.hardAbort(yieldingMessage);
+								computer.hardAbort(yieldingMessage);
 								worker.join(timeoutAbortLength);
 
 								if (worker.isAlive()) {
 									worker.interrupt();
 								}
 							}
-
-
 							break;
 					}
-				} catch (Exception e) {
-				}
+				} catch (Exception ignored) { }
 			}
 		}
 	}
-
-
 }

@@ -68,24 +68,29 @@ public class Computer {
 	 */
 	public final BlockingQueue<Runnable> events = new LinkedBlockingQueue<>(256);
 	public final Queue<String> messages = new LinkedList<>();
+
 	/**
 	 * The event to filter on. Terminate events will still get through
 	 */
 	public String filter = null;
 	protected IOutput output;
 	protected List<CCAPI> apis = new ArrayList<>();
+
 	/**
 	 * The global environment to run in
 	 */
 	protected LuaValue globals;
+
 	/**
 	 * The main routine that code is executed in
 	 */
 	protected LuaThread mainCoroutine;
+
 	/**
 	 * The thread code is run on
 	 */
-	protected ComputerThread mainThread;
+	protected ComputerThread mainThread = new ComputerThread(this);
+
 	// The coroutine API
 	protected LuaValue coroutineCreate;
 	protected LuaValue coroutineYield;
@@ -143,63 +148,70 @@ public class Computer {
 
 	/**
 	 * Setup the computer, generating globals and injecting APIs
+	 * Also create the file system
 	 */
-	public void setup() {
-		globals = JsePlatform.debugGlobals();
+	protected void setup() {
+		if (!createFilesystem()) throw new RuntimeException("Cannot create filesystem");
 
-		// Sadly this isn't a local thing we can customise
-		if (config.useLuaJC) LuaJC.install();
+		{
+			globals = JsePlatform.debugGlobals();
 
-		LuaValue coroutineLib = globals.get("coroutine");
-		if (config.coroutineHookCount > 0) {
-			final LuaValue coroutineCreate = coroutineLib.get("create");
+			// Sadly this isn't a local thing we can't really customise this
+			if (config.useLuaJC) LuaJC.install();
 
-			LuaValue setHook = globals.get("debug").get("setHook");
+			LuaValue coroutineLib = globals.get("coroutine");
+			if (config.coroutineHookCount > 0) {
+				final LuaValue coroutineCreate = coroutineLib.get("create");
 
-			// We need to insert a new version of the Coroutine library
-			coroutineLib.set("create", new OneArgFunction() {
-				@Override
-				public LuaValue call(LuaValue arg) {
-					LuaValue coroutine = coroutineCreate.call(arg).checkthread();
+				LuaValue setHook = globals.get("debug").get("setHook");
 
-					// Every <n> instructions:
-					setHook.invoke(new LuaValue[]{
-							coroutine,
-							new ZeroArgFunction() {
-								@Override
-								public LuaValue call() {
-									// Check if the computer should abort, if so then yield this co-routine
-									if (Computer.this.hardAbort != null) {
-										LuaThread.yield(LuaValue.NIL);
+				// We need to insert a new version of the Coroutine library
+				coroutineLib.set("create", new OneArgFunction() {
+					@Override
+					public LuaValue call(LuaValue arg) {
+						LuaValue coroutine = coroutineCreate.call(arg).checkthread();
+
+						// Every <n> instructions:
+						setHook.invoke(new LuaValue[]{
+								coroutine,
+								new ZeroArgFunction() {
+									@Override
+									public LuaValue call() {
+										// Check if the computer should abort, if so then yield this co-routine
+										if (Computer.this.hardAbort != null) {
+											LuaThread.yield(LuaValue.NIL);
+										}
+										return LuaValue.NIL;
 									}
-									return LuaValue.NIL;
-								}
-							}, LuaValue.NIL, LuaValue.valueOf(config.coroutineHookCount)
-					});
+								}, LuaValue.NIL, LuaValue.valueOf(config.coroutineHookCount)
+						});
 
-					return coroutine;
+						return coroutine;
+					}
+				});
+			}
+
+			coroutineCreate = coroutineLib.get("create");
+			coroutineYield = coroutineLib.get("yield");
+			coroutineResume = coroutineLib.get("resume");
+
+			// Load the APIs
+			for (CCAPI api : apis) {
+				if (api != null) {
+					// Set environment and bind to the environment
+					api.setup(this, globals);
+					api.bind();
 				}
-			});
-		}
+			}
 
-		coroutineCreate = coroutineLib.get("create");
-		coroutineYield = coroutineLib.get("yield");
-		coroutineResume = coroutineLib.get("resume");
-
-		// Load the APIs
-		for (CCAPI api : apis) {
-			if (api != null) {
-				// Set environment and bind to the environment
-				api.setup(this, globals);
-				api.bind();
+			// Clear all the blacklisted globals
+			LuaValue nil = LuaValue.NIL;
+			for (String global : config.blacklist) {
+				globals.set(global, nil);
 			}
 		}
 
-		// Clear all the blacklisted globals
-		LuaValue nil = LuaValue.NIL;
-		for (String global : config.blacklist) {
-			globals.set(global, nil);
-		}
+		loadBios();
 	}
 
 	/**
@@ -235,9 +247,59 @@ public class Computer {
 		}
 	}
 
-	protected void startThread() {
-		mainThread = new ComputerThread(this);
-		mainThread.start();
+	/**
+	 * Start the computer thread
+	 */
+	public void start() {
+		synchronized (events) {
+			if (mainThread.getState() != ComputerThread.State.STOPPED) {
+				throw new IllegalStateException("Computer is running");
+			}
+			events.clear();
+			events.add(new Runnable() {
+				@Override
+				public void run() {
+					setup();
+				}
+			});
+			mainThread.start();
+		}
+	}
+
+	/**
+	 * Shutdown the computer
+	 *
+	 * @param force Force a shutdown by terminating the thread
+	 */
+	public void shutdown(boolean force) {
+		synchronized (events) {
+			if (mainThread.getState() == ComputerThread.State.STOPPED) {
+				throw new IllegalStateException("Computer is not running");
+			}
+
+			events.add(new Runnable() {
+				@Override
+				public void run() {
+					if (fileSystem != null) {
+						fileSystem.unload();
+					}
+
+					if (mainCoroutine != null) {
+						mainCoroutine.abandon();
+						mainCoroutine = null;
+					}
+
+					mainThread.stop(force);
+				}
+			});
+		}
+	}
+
+	/**
+	 * Shutdown the computer
+	 */
+	public void shutdown() {
+		shutdown(false);
 	}
 
 	/**
