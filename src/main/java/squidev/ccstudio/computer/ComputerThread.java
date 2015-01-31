@@ -158,20 +158,23 @@ public class ComputerThread {
 							break;
 						case HARD:
 							worker.join(timeoutLength);
-							computer.softAbort(yieldingMessage);
-							worker.join(timeoutAbortLength);
-
 							if (worker.isAlive()) {
-								computer.hardAbort(yieldingMessage);
+								computer.softAbort(yieldingMessage);
 								worker.join(timeoutAbortLength);
 
 								if (worker.isAlive()) {
-									worker.interrupt();
+									computer.hardAbort(yieldingMessage);
+									worker.join(timeoutAbortLength);
+
+									if (worker.isAlive()) {
+										worker.interrupt();
+									}
 								}
 							}
-							break;
 					}
-				} catch (Exception ignored) { }
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}

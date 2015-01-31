@@ -210,8 +210,6 @@ public class Computer {
 				globals.set(global, nil);
 			}
 		}
-
-		loadBios();
 	}
 
 	/**
@@ -260,6 +258,7 @@ public class Computer {
 				@Override
 				public void run() {
 					setup();
+					loadBios();
 				}
 			});
 			mainThread.start();
@@ -277,7 +276,7 @@ public class Computer {
 				throw new IllegalStateException("Computer is not running");
 			}
 
-			events.add(new Runnable() {
+			Runnable task = new Runnable() {
 				@Override
 				public void run() {
 					if (fileSystem != null) {
@@ -291,7 +290,14 @@ public class Computer {
 
 					mainThread.stop(force);
 				}
-			});
+			};
+
+			if (force) {
+				mainThread.stop(true);
+				task.run();
+			} else {
+				events.add(task);
+			}
 		}
 	}
 
