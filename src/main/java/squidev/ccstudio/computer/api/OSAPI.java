@@ -74,7 +74,7 @@ public class OSAPI {
 
 	@LuaFunction
 	public void shutdown() {
-		throw new NotImplementedException();
+		computer.shutdown();
 	}
 
 	@LuaFunction
@@ -124,7 +124,6 @@ public class OSAPI {
 		return Math.floor((double) (System.currentTimeMillis() - environment.startTime) / 1000) / 1200 % 24;
 	}
 
-	// TODO: "cancelTimer", "cancelAlarm"
 	@LuaFunction
 	public void cancelTimer(int id) {
 		ComputerTimer timer = timers.get(id);
@@ -154,8 +153,6 @@ public class OSAPI {
 	/**
 	 * Handles a computer alarm.
 	 * This is scheduled for a time on the computer instead
-	 * <p>
-	 * TODO: Implement this
 	 */
 	public class ComputerAlarm extends TimerTask {
 		public final int id = ++alarmId;

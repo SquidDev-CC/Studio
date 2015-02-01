@@ -5,7 +5,6 @@ import org.luaj.vm2.LuaFunction;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.VarArgFunction;
-import squidev.ccstudio.computer.Computer;
 
 /**
  * A wrapper for using one `invoke` method for
@@ -35,22 +34,11 @@ public abstract class CCAPIWrapper extends CCAPI {
 		LuaTable table = new LuaTable();
 		try {
 			for (int i = 0, n = methodNames.length; i < n; i++) {
-				final int index = i;
-				System.out.println("Setting up " + names[0] + "." + methodNames[index][0]);
-				LuaFunction f = new VarArgFunction() {
-					protected Computer computer = CCAPIWrapper.this.computer;
-
-					public Varargs invoke(Varargs args) {
-						System.out.println("Calling " + names[0] + ":" + methodNames[index]);
-						// Every time we call a method we should check the tryAbort function
-						computer.tryAbort();
-						return CCAPIWrapper.this.invoke(args, index);
-					}
-				};
-				f.setfenv(env);
-
-				// Allow multiple
+				// Allow multiple names
 				for (String name : methodNames[i]) {
+					// Each function should be a different object, even if it is identical.
+					LuaFunction f = new InvokeFunction(i);
+					f.setfenv(env);
 					table.set(name, f);
 				}
 			}
@@ -58,5 +46,19 @@ public abstract class CCAPIWrapper extends CCAPI {
 			throw new LuaError("Bind failed: " + e);
 		}
 		return table;
+	}
+
+	protected class InvokeFunction extends VarArgFunction {
+		public final int index;
+
+		public InvokeFunction(int index) {
+			this.index = index;
+		}
+
+		@Override
+		public Varargs invoke(Varargs varargs) {
+			computer.tryAbort();
+			return CCAPIWrapper.this.invoke(varargs, index);
+		}
 	}
 }
