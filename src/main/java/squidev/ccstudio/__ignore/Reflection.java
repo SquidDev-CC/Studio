@@ -13,7 +13,7 @@ public class Reflection {
 		System.out.println(LuaValue.class.getCanonicalName());
 		System.out.println(LuaValue.class.getSimpleName());
 
-		for(Method m : LuaValue.class.getMethods()) {
+		for (Method m : LuaValue.class.getMethods()) {
 			System.out.println("    " + m.toString() + "    " + Type.getMethodDescriptor(m));
 		}
 

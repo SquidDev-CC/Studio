@@ -17,11 +17,12 @@ public class LuaConverter {
 
 	/**
 	 * Convert a LuaValue to a Java value
+	 *
 	 * @param value The value to convert
 	 * @return The converted value or null or failure
 	 */
 	public Object toObject(LuaValue value) {
-		switch(value.type()) {
+		switch (value.type()) {
 			case LuaValue.TNONE:
 			case LuaValue.TNIL:
 				return null;
@@ -34,10 +35,10 @@ public class LuaConverter {
 				return value.toString();
 			case LuaValue.TTABLE:
 				boolean clearWhenDone = false;
-				if(processingObjects == null) {
+				if (processingObjects == null) {
 					processingObjects = new IdentityHashMap<LuaValue, Object>();
 					clearWhenDone = true;
-				} else if(processingObjects.containsKey(value)) {
+				} else if (processingObjects.containsKey(value)) {
 					return processingObjects.get(value);
 				} else {
 					Map<Object, Object> map = new HashMap<Object, Object>();

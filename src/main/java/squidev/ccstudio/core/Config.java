@@ -86,10 +86,10 @@ public class Config {
 
 		/**
 		 * Handle like ComputerCraft does:
-		 *
-		 *  1. Run for 5 seconds, if still running soft abort (abort when yielding)
-		 *  2. Run for 1.25 seconds, if still running hard abort
-		 *  3. Run for 1.25 seconds, if still running then abort the thread
+		 * <p>
+		 * 1. Run for 5 seconds, if still running soft abort (abort when yielding)
+		 * 2. Run for 1.25 seconds, if still running hard abort
+		 * 3. Run for 1.25 seconds, if still running then abort the thread
 		 */
 		HARD,
 

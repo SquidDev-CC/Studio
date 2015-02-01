@@ -19,7 +19,6 @@ import static squidev.ccstudio.core.asm.AsmUtils.constantOpcode;
 
 /**
  * Builds ASM code to call an API
- *
  * TODO: More constants, less strings
  */
 public class APIBuilder {
@@ -114,7 +113,7 @@ public class APIBuilder {
 
 		// Read all methods
 		methods = new ArrayList<>();
-		for(Method m : reflection.getMethods()) {
+		for (Method m : reflection.getMethods()) {
 			if (m.isAnnotationPresent(LuaFunction.class)) {
 				// Append items to the list
 				methods.add(new LuaMethod(m));
@@ -430,6 +429,7 @@ public class APIBuilder {
 
 		/**
 		 * Get the names of the Lua function
+		 *
 		 * @return A list of method names
 		 */
 		public String[] getLuaName() {
@@ -442,6 +442,7 @@ public class APIBuilder {
 
 		/**
 		 * Get the name of the Java method
+		 *
 		 * @return The Java method name
 		 */
 		public String getJavaName() {

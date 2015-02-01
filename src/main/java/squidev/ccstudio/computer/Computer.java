@@ -263,6 +263,7 @@ public class Computer {
 					loadBios();
 				}
 			});
+			queueEvent("paste", LuaValue.valueOf("ls"));
 			mainThread.start();
 		}
 	}

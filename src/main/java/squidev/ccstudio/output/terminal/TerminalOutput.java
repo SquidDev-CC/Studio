@@ -27,31 +27,49 @@ public class TerminalOutput implements IOutput {
 
 	/**
 	 * Maps a CC color to a ANSI color
-	 *
+	 * <p>
 	 * This is much faster than using a hash map
+	 *
 	 * @param col The CC color to convert
 	 * @return The ANSI color
 	 */
 	public static int getColor(int col) {
-		switch(col) {
-			case 0: return 97; // White
-			case 1: return 33; // Orange
-			case 2: return 95; // Magenta
-			case 3: return 94; // Light blue
-			case 4: return 93; // Yellow
-			case 5: return 92; // Lime
-			case 6: return 95; // No pink - use magenta (its not like anyone can tell the difference)
-			case 7: return 90; // Gray (grey)
-			case 8: return 37; // Light gray (grey)
-			case 9: return 96; // Cyan
-			case 10: return 35; // Purple (Dark magenta)
-			case 11: return 36; // Blue
-			case 12: return 31; // Brown
-			case 13: return 32; // Green
-			case 14: return 91; // Red
-			case 15: return 30; // Black
+		switch (col) {
+			case 0:
+				return 97; // White
+			case 1:
+				return 33; // Orange
+			case 2:
+				return 95; // Magenta
+			case 3:
+				return 94; // Light blue
+			case 4:
+				return 93; // Yellow
+			case 5:
+				return 92; // Lime
+			case 6:
+				return 95; // No pink - use magenta (its not like anyone can tell the difference)
+			case 7:
+				return 90; // Gray (grey)
+			case 8:
+				return 37; // Light gray (grey)
+			case 9:
+				return 96; // Cyan
+			case 10:
+				return 35; // Purple (Dark magenta)
+			case 11:
+				return 36; // Blue
+			case 12:
+				return 31; // Brown
+			case 13:
+				return 32; // Green
+			case 14:
+				return 91; // Red
+			case 15:
+				return 30; // Black
 
-			default: return 30;
+			default:
+				return 30;
 		}
 	}
 
@@ -117,9 +135,9 @@ public class TerminalOutput implements IOutput {
 	 */
 	@Override
 	public void scroll(int amount) {
-		if(amount > 0) {
+		if (amount > 0) {
 			output.print(START_ESCAPE + amount + "S");
-		} else if(amount < 0) {
+		} else if (amount < 0) {
 			output.print(START_ESCAPE + (-amount) + "S");
 		}
 	}

@@ -11,6 +11,7 @@ import squidev.ccstudio.core.apis.wrapper.APIWrapper;
 public class Invoke extends APIWrapper<Invoke.SubThing> {
 	private static final String[][] METHOD_NAMES = {{"noArgsNoReturn"}, {"twoArgsOneReturn"}, {"noArgsLuaReturn"}, {"varArgsLuaReturn"}};
 	private static final String[] NAMES = null;
+
 	public Invoke(SubThing inst) {
 		super(inst);
 		methodNames = METHOD_NAMES;
@@ -18,12 +19,12 @@ public class Invoke extends APIWrapper<Invoke.SubThing> {
 	}
 
 	public Varargs invoke(Varargs args, int index) {
-		switch(index) {
+		switch (index) {
 			case 0:
 				instance.noArgsNoReturn();
 				return LuaValue.NONE;
 			case 1:
-				if(args.narg() < 2 || !args.arg(1).isnumber() || !args.arg(2).isnumber()) {
+				if (args.narg() < 2 || !args.arg(1).isnumber() || !args.arg(2).isnumber()) {
 					throw new LuaError("Expected number, number");
 				}
 
@@ -38,11 +39,19 @@ public class Invoke extends APIWrapper<Invoke.SubThing> {
 	}
 
 	public static class SubThing {
-		public void noArgsNoReturn() { }
-		public double twoArgsOneReturn(double a, double b) { return 0; }
+		public void noArgsNoReturn() {
+		}
 
-		public LuaValue noArgsLuaReturn() { return LuaValue.NONE; }
+		public double twoArgsOneReturn(double a, double b) {
+			return 0;
+		}
 
-		public LuaValue varArgsLuaReturn(Varargs args) { return LuaValue.NONE; }
+		public LuaValue noArgsLuaReturn() {
+			return LuaValue.NONE;
+		}
+
+		public LuaValue varArgsLuaReturn(Varargs args) {
+			return LuaValue.NONE;
+		}
 	}
 }

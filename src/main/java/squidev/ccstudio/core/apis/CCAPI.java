@@ -12,6 +12,7 @@ public abstract class CCAPI implements ICCObject {
 	protected LuaTable table = null;
 
 	protected Computer computer = null;
+
 	/**
 	 * Get the names this API should be stored in
 	 */
@@ -50,6 +51,7 @@ public abstract class CCAPI implements ICCObject {
 
 	/**
 	 * Get the computer
+	 *
 	 * @return The API's computer
 	 */
 	public Computer getComputer() {

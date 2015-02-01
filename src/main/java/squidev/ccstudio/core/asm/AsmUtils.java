@@ -14,17 +14,24 @@ import static org.objectweb.asm.Opcodes.*;
 public class AsmUtils {
 	/**
 	 * Get the appropriate constant opcode
+	 *
 	 * @param number The opcode number
 	 * @return ICONST_n or -1 if doesn't exist
 	 */
 	public static int getConstOpcode(int number) {
-		switch(number) {
-			case 0: return ICONST_0;
-			case 1: return ICONST_1;
-			case 2: return ICONST_2;
-			case 3: return ICONST_3;
-			case 4: return ICONST_4;
-			case 5: return ICONST_5;
+		switch (number) {
+			case 0:
+				return ICONST_0;
+			case 1:
+				return ICONST_1;
+			case 2:
+				return ICONST_2;
+			case 3:
+				return ICONST_3;
+			case 4:
+				return ICONST_4;
+			case 5:
+				return ICONST_5;
 		}
 
 		return -1;
@@ -32,11 +39,12 @@ public class AsmUtils {
 
 	/**
 	 * Insert the correct Opcode for Java constants
-	 * @param mv The {@see MethodVisitor}
+	 *
+	 * @param mv     The {@see MethodVisitor}
 	 * @param number The constant to insert
 	 */
 	public static void constantOpcode(MethodVisitor mv, int number) {
-		if(number >= 0 && number <= 5) {
+		if (number >= 0 && number <= 5) {
 			mv.visitInsn(getConstOpcode(number));
 		} else {
 			mv.visitIntInsn(BIPUSH, number);
@@ -45,15 +53,16 @@ public class AsmUtils {
 
 	/**
 	 * Get the method signature
-	 * @param classObj The class to find it from
+	 *
+	 * @param classObj   The class to find it from
 	 * @param methodName The method name
-	 * @param args Argument types
+	 * @param args       Argument types
 	 * @return The method signature or {@code null} or failure
 	 */
 	public static String getMethodDecriptor(Class<?> classObj, String methodName, Class<?>... args) {
 		try {
 			return Type.getMethodDescriptor(classObj.getMethod(methodName, args));
-		} catch(NoSuchMethodException e) {
+		} catch (NoSuchMethodException e) {
 			return null;
 		}
 	}
@@ -86,7 +95,7 @@ public class AsmUtils {
 		public static TinyMethod tryConstruct(Class<?> classObj, String methodName, Class<?>... args) {
 			try {
 				return new TinyMethod(classObj.getMethod(methodName, args));
-			} catch(NoSuchMethodException e) {
+			} catch (NoSuchMethodException e) {
 				return null;
 			}
 		}
