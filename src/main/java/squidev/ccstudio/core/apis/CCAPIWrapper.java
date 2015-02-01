@@ -36,10 +36,12 @@ public abstract class CCAPIWrapper extends CCAPI {
 		try {
 			for (int i = 0, n = methodNames.length; i < n; i++) {
 				final int index = i;
+				System.out.println("Setting up " + names[0] + "." + methodNames[index][0]);
 				LuaFunction f = new VarArgFunction() {
 					protected Computer computer = CCAPIWrapper.this.computer;
 
 					public Varargs invoke(Varargs args) {
+						System.out.println("Calling " + names[0] + ":" + methodNames[index]);
 						// Every time we call a method we should check the tryAbort function
 						computer.tryAbort();
 						return CCAPIWrapper.this.invoke(args, index);

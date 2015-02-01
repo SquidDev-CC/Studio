@@ -163,7 +163,7 @@ public class Computer {
 			if (config.coroutineHookCount > 0) {
 				final LuaValue coroutineCreate = coroutineLib.get("create");
 
-				LuaValue setHook = globals.get("debug").get("setHook");
+				final LuaValue setHook = globals.get("debug").get("sethook");
 
 				// We need to insert a new version of the Coroutine library
 				coroutineLib.set("create", new OneArgFunction() {
@@ -179,9 +179,9 @@ public class Computer {
 									public LuaValue call() {
 										// Check if the computer should abort, if so then yield this co-routine
 										if (Computer.this.hardAbort != null) {
-											LuaThread.yield(LuaValue.NIL);
+											LuaThread.yield(LuaValue.NONE);
 										}
-										return LuaValue.NIL;
+										return LuaValue.NONE;
 									}
 								}, LuaValue.NIL, LuaValue.valueOf(config.coroutineHookCount)
 						});
@@ -242,6 +242,8 @@ public class Computer {
 				mainCoroutine.abandon();
 				mainCoroutine = null;
 			}
+			System.out.println("Cannot load bios");
+			e.printStackTrace();
 		}
 	}
 

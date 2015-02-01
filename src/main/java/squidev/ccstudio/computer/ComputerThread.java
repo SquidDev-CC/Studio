@@ -46,6 +46,7 @@ public class ComputerThread {
 				case STOPPED:
 					// Create a new thread
 					thread = new Thread(new ComputerInternalThread());
+					// thread.setDaemon(true);
 					thread.start();
 					state = State.RUNNING;
 					return;
@@ -143,6 +144,7 @@ public class ComputerThread {
 
 				try {
 					Thread worker = new Thread(events.take());
+					// worker.setDaemon(true);
 					worker.start();
 					switch (timeoutStyle) {
 						case NONE:

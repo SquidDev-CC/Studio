@@ -14,7 +14,7 @@ public class Config {
 	 *
 	 * @see org.luaj.vm2.luajc.LuaJC
 	 */
-	public boolean useLuaJC = true;
+	public boolean useLuaJC = false;
 
 	/**
 	 * Globals that are blacklisted
