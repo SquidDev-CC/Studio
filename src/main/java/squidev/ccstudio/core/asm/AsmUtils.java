@@ -46,8 +46,12 @@ public class AsmUtils {
 	public static void constantOpcode(MethodVisitor mv, int number) {
 		if (number >= 0 && number <= 5) {
 			mv.visitInsn(getConstOpcode(number));
-		} else {
+		} else if(number >= -128 && number <= 127) {
 			mv.visitIntInsn(BIPUSH, number);
+		} else if(number >= -32768 && number <= 32767) {
+			mv.visitIntInsn(SIPUSH, (short)number);
+		} else {
+			mv.visitLdcInsn(number);
 		}
 	}
 

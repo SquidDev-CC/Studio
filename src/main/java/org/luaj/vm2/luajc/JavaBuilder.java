@@ -19,24 +19,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
+
 package org.luaj.vm2.luajc;
 
 import org.apache.bcel.Constants;
 import org.apache.bcel.generic.*;
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.*;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.util.CheckClassAdapter;
+import squidev.ccstudio.core.Config;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.objectweb.asm.Opcodes.*;
+import static squidev.ccstudio.core.asm.AsmUtils.TinyMethod;
+import static squidev.ccstudio.core.asm.AsmUtils.constantOpcode;
+
 public class JavaBuilder {
 
-	// --------------------- branching support -------------------------
-	public static final int BRANCH_GOTO = 1;
-	public static final int BRANCH_IFNE = 2;
-	public static final int BRANCH_IFEQ = 3;
 	private static final String STR_VARARGS = Varargs.class.getName();
 	private static final String STR_LUAVALUE = LuaValue.class.getName();
 	private static final String STR_LUASTRING = LuaString.class.getName();
@@ -47,6 +52,7 @@ public class JavaBuilder {
 	private static final String STR_LUATABLE = LuaTable.class.getName();
 	private static final String STR_BUFFER = Buffer.class.getName();
 	private static final String STR_STRING = String.class.getName();
+
 	private static final ObjectType TYPE_VARARGS = new ObjectType(STR_VARARGS);
 	private static final ObjectType TYPE_LUAVALUE = new ObjectType(STR_LUAVALUE);
 	private static final ObjectType TYPE_LUASTRING = new ObjectType(STR_LUASTRING);
@@ -56,14 +62,22 @@ public class JavaBuilder {
 	private static final ObjectType TYPE_LUABOOLEAN = new ObjectType(STR_LUABOOLEAN);
 	private static final ObjectType TYPE_LUATABLE = new ObjectType(STR_LUATABLE);
 	private static final ObjectType TYPE_BUFFER = new ObjectType(STR_BUFFER);
+
 	private static final ArrayType TYPE_LOCALUPVALUE = new ArrayType(TYPE_LUAVALUE, 1);
 	private static final ArrayType TYPE_CHARARRAY = new ArrayType(Type.CHAR, 1);
+
+	private static final String TYPE_STR_LOCALUPVALUE = org.objectweb.asm.Type.getInternalName(LuaValue[].class);
+	private static final String TYPE_STR_LUAVALUE = org.objectweb.asm.Type.getInternalName(LuaValue.class);
+
+
 	private static final Class[] NO_INNER_CLASSES = {};
-	private static final String STR_FUNCV = VarArgFunction.class.getName();
+
+	/*private static final String STR_FUNCV = VarArgFunction.class.getName();
 	private static final String STR_FUNC0 = ZeroArgFunction.class.getName();
 	private static final String STR_FUNC1 = OneArgFunction.class.getName();
 	private static final String STR_FUNC2 = TwoArgFunction.class.getName();
-	private static final String STR_FUNC3 = ThreeArgFunction.class.getName();
+	private static final String STR_FUNC3 = ThreeArgFunction.class.getName();*/
+
 	// argument list types
 	private static final Type[] ARG_TYPES_NONE = {};
 	private static final Type[] ARG_TYPES_INT = {Type.INT};
@@ -83,91 +97,168 @@ public class JavaBuilder {
 	private static final Type[] ARG_TYPES_INT_INT = {Type.INT, Type.INT};
 	private static final Type[] ARG_TYPES_LUAVALUE = {TYPE_LUAVALUE};
 	private static final Type[] ARG_TYPES_BUFFER = {TYPE_BUFFER};
+
 	// names, arg types for main prototype classes
-	private static final String[] SUPER_NAME_N = {STR_FUNC0, STR_FUNC1, STR_FUNC2, STR_FUNC3, STR_FUNCV,};
+/*	private static final String[] SUPER_NAME_N = {STR_FUNC0, STR_FUNC1, STR_FUNC2, STR_FUNC3, STR_FUNCV,};
 	private static final ObjectType[] RETURN_TYPE_N = {TYPE_LUAVALUE, TYPE_LUAVALUE, TYPE_LUAVALUE, TYPE_LUAVALUE, TYPE_VARARGS,};
 	private static final Type[][] ARG_TYPES_N = {ARG_TYPES_NONE, ARG_TYPES_LUAVALUE, ARG_TYPES_LUAVALUE_LUAVALUE, ARG_TYPES_LUAVALUE_LUAVALUE_LUAVALUE, ARG_TYPES_VARARGS,};
 	private static final String[][] ARG_NAMES_N = {{}, {"arg"}, {"arg1", "arg2"}, {"arg1", "arg2", "arg3"}, {"args"},};
-	private static final String[] METH_NAME_N = {"call", "call", "call", "call", "onInvoke",};
+	private static final String[] METH_NAME_N = {"call", "call", "call", "call", "onInvoke",};*/
+
+	protected static class FunctionType {
+		public final String signature;
+		public final String methodName;
+		public final String className;
+
+		public FunctionType(String name, String invokeName, String invokeSignature) {
+			className = name;
+			methodName = invokeName;
+			signature = invokeSignature;
+		}
+
+		public FunctionType(Class classObj, String invokeName, Class... args) {
+			this(
+					org.objectweb.asm.Type.getDescriptor(classObj),
+					invokeName, getSignature(classObj, invokeName, args)
+			);
+		}
+
+		private static String getSignature(Class classObj, String invokeName, Class... args) {
+			try {
+				return org.objectweb.asm.Type.getMethodDescriptor(classObj.getMethod(invokeName, args));
+			} catch(Exception e) { }
+			return "()V";
+		}
+	}
+
+	// Manage super classes
+	private static FunctionType[] SUPER_TYPES = {
+			new FunctionType(ZeroArgFunction.class, "call"),
+			new FunctionType(OneArgFunction.class, "call", LuaValue.class),
+			new FunctionType(TwoArgFunction.class, "call", LuaValue.class, LuaValue.class),
+			new FunctionType(ThreeArgFunction.class, "call", LuaValue.class, LuaValue.class, LuaValue.class),
+			new FunctionType(VarArgFunction.class, "onInvoke", Varargs.class),
+	};
+
+	// Table functions
+	private static final TinyMethod METHOD_LUAVALUE_TABLEOF = TinyMethod.tryConstruct(LuaValue.class, "tableOf", Varargs.class, int.class);
+	private static final TinyMethod METHOD_LUAVALUE_TABLEOF_DIMS = TinyMethod.tryConstruct(LuaValue.class, "tableOf", int.class, int.class);
+	private static final TinyMethod METHOD_LUAVALUE_GET = TinyMethod.tryConstruct(LuaValue.class, "get", LuaValue.class);
+	private static final TinyMethod METHOD_LUAVALUE_SET = TinyMethod.tryConstruct(LuaValue.class, "set", LuaValue.class);
+
+	// Varargs
+	private static final TinyMethod METHOD_VARARGS_ARG1 = TinyMethod.tryConstruct(Varargs.class, "arg1");
+	private static final TinyMethod METHOD_VARARGS_ARG = TinyMethod.tryConstruct(Varargs.class, "arg", int.class);
+	private static final TinyMethod METHOD_VARARGS_SUBARGS = TinyMethod.tryConstruct(Varargs.class, "subargs", int.class);
+
+	// Type conversion
+	private static final TinyMethod METHOD_LUAVALUE_TO_BOOL = TinyMethod.tryConstruct(LuaValue.class, "toboolean");
+	private static final TinyMethod METHOD_BUFFER_TO_STR = TinyMethod.tryConstruct(Buffer.class, "tostring");
+
+	// Booleans
+	private static final TinyMethod METHOD_LUAVALUE_TESTFOR_B = TinyMethod.tryConstruct(LuaValue.class, "testfor_b", LuaValue.class, LuaValue.class);
+	private static final TinyMethod METHOD_LUAVALUE_IS_NIL = TinyMethod.tryConstruct(LuaValue.class, "isnil");
+
+	// TODO: Can this be LibFunction? Is there a performance change?
+	private final TinyMethod methodCurrentNewUpvalueEmpty;
+	private final TinyMethod methodCurrentNewUpvalueNil;
+	private final TinyMethod methodCurrentNewUpvalueValue;
+
 	// varable naming
 	private static final String PREFIX_CONSTANT = "k";
 	private static final String PREFIX_UPVALUE = "u";
 	private static final String PREFIX_PLAIN_SLOT = "s";
 	private static final String PREFIX_UPVALUE_SLOT = "a";
 	private static final String NAME_VARRESULT = "v";
-	private static int SUPERTYPE_VARARGS = 4;
+
 	// basic info
 	private final ProtoInfo pi;
 	private final Prototype p;
 	private final String classname;
+
 	// bcel variables
-	private final ClassGen cg;
-	private final ConstantPoolGen cp;
-	private final InstructionFactory factory;
+	private final ClassWriter writer;
+
 	// main instruction list for the main function of this class
-	private final InstructionList init;
-	private final InstructionList main;
-	private final MethodGen mg;
+	private MethodVisitor init;
+	private final MethodVisitor main;
+
+	/**
+	 * The program counter
+	 */
+	private int pc = 0;
+
+	/**
+	 * Max number of locals
+	 */
+	private int maxLocals = 0;
+
+	/**
+	 * The local index of the varargs result
+	 */
+	private int varargsLocal = -1;
+
+	// the superclass arg count, 0-3 args, 4=varargs
+	private int superclassType;
+	private static int SUPERTYPE_VARARGS = 4;
+
 	// storage for goto locations
 	private final int[] targets;
 	private final BranchInstruction[] branches;
 	private final InstructionHandle[] branchDestHandles;
-	// the superclass arg count, 0-3 args, 4=varargs
-	private int superclassType;
-	private InstructionHandle beginningOfLuaInstruction;
+	private int beginningOfLuaInstruction;
+
 	// hold vararg result
 	private LocalVariableGen varresult = null;
-	private Map<Integer, Integer> plainSlotVars = new HashMap<Integer, Integer>();
-	private Map<Integer, Integer> upvalueSlotVars = new HashMap<Integer, Integer>();
-	private Map<LuaValue, String> constants = new HashMap<LuaValue, String>();
 
 	public JavaBuilder(ProtoInfo pi, String classname, String filename) {
 		this.pi = pi;
 		this.p = pi.prototype;
 		this.classname = classname;
 
+		// Create some more functions
+		methodCurrentNewUpvalueEmpty = new TinyMethod(classname, "newupe", "()" + TYPE_STR_LOCALUPVALUE, true);
+		methodCurrentNewUpvalueNil = new TinyMethod(classname, "newupn", "()" + TYPE_STR_LOCALUPVALUE, true);
+		methodCurrentNewUpvalueValue = new TinyMethod(classname, "newupl", "(" + TYPE_STR_LUAVALUE + ")" + TYPE_STR_LOCALUPVALUE, true);
+
 		// what class to inherit from
 		superclassType = p.numparams;
-		if (p.is_vararg != 0 || superclassType >= SUPERTYPE_VARARGS)
+		if (p.is_vararg != 0 || superclassType >= SUPERTYPE_VARARGS) {
 			superclassType = SUPERTYPE_VARARGS;
+		}
+
+		// If we return var args, then must be a var arg function
 		for (int i = 0, n = p.code.length; i < n; i++) {
 			int inst = p.code[i];
 			int o = Lua.GET_OPCODE(inst);
-			if ((o == Lua.OP_TAILCALL) ||
-					((o == Lua.OP_RETURN) && (Lua.GETARG_B(inst) < 1 || Lua.GETARG_B(inst) > 2))) {
+			if ((o == Lua.OP_TAILCALL) || ((o == Lua.OP_RETURN) && (Lua.GETARG_B(inst) < 1 || Lua.GETARG_B(inst) > 2))) {
 				superclassType = SUPERTYPE_VARARGS;
 				break;
 			}
 		}
 
-		// create class generator
-		cg = new ClassGen(classname, SUPER_NAME_N[superclassType], filename,
-				Constants.ACC_PUBLIC | Constants.ACC_SUPER, null);
-		cp = cg.getConstantPool(); // cg creates constant pool
+		FunctionType superType = SUPER_TYPES[superclassType];
 
-		// main instruction lists
-		factory = new InstructionFactory(cg);
-		init = new InstructionList();
-		main = new InstructionList();
+		// Create class writer
+		writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
-		// create the fields
+		// Check the name of the class. We have no interfaces and no generics
+		writer.visit(V1_6, ACC_PUBLIC + ACC_SUPER, classname, null, superType.className, null);
+
+		// Write the filename
+		writer.visitSource(filename, null);
+
+		// Create the fields
 		for (int i = 0; i < p.nups; i++) {
-			boolean isrw = pi.isReadWriteUpvalue(pi.upvals[i]);
-			Type uptype = isrw ? TYPE_LOCALUPVALUE : TYPE_LUAVALUE;
-			FieldGen fg = new FieldGen(0, uptype, upvalueName(i), cp);
-			cg.addField(fg.getField());
+			boolean isReadWrite = pi.isReadWriteUpvalue(pi.upvals[i]);
+			String uptype = isReadWrite ? TYPE_STR_LOCALUPVALUE : TYPE_STR_LUAVALUE;
+			writer.visitField(0, upvalueName(i), uptype, null, null);
 		}
 
-		// create the method
-		mg = new MethodGen(Constants.ACC_PUBLIC | Constants.ACC_FINAL, // access flags
-				RETURN_TYPE_N[superclassType], // return type
-				ARG_TYPES_N[superclassType], // argument types
-				ARG_NAMES_N[superclassType], // arg names
-				METH_NAME_N[superclassType],
-				STR_LUAVALUE, // method, defining class
-				main, cp);
+		// Create the invoke method
+		main = writer.visitMethod(ACC_PUBLIC + ACC_FINAL, superType.methodName, superType.signature, null, null);
 
-		// initialize the values in the slots
+		// Initialize the values in the slots
 		initializeSlots();
 
 		// initialize branching
@@ -177,40 +268,38 @@ public class JavaBuilder {
 		branchDestHandles = new InstructionHandle[nc];
 	}
 
-	private static String upvalueName(int upindex) {
-		return PREFIX_UPVALUE + upindex;
-	}
-
 	public void initializeSlots() {
-		int slot = 0;
+		int slot;
 		createUpvalues(-1, 0, p.maxstacksize);
+		MethodVisitor main = this.main;
+
 		if (superclassType == SUPERTYPE_VARARGS) {
 			for (slot = 0; slot < p.numparams; slot++) {
 				if (pi.isInitialValueUsed(slot)) {
-					append(new ALOAD(1));
-					append(new PUSH(cp, slot + 1));
-					append(factory.createInvoke(STR_VARARGS, "arg", TYPE_LUAVALUE, ARG_TYPES_INT, Constants.INVOKEVIRTUAL));
+					main.visitVarInsn(ALOAD, 1);                    increment();
+					constantOpcode(main, slot + 1);                 increment();
+					METHOD_VARARGS_ARG.inject(main, INVOKEVIRTUAL); increment();
 					storeLocal(-1, slot);
 				}
 			}
-			boolean needsarg = ((p.is_vararg & Lua.VARARG_NEEDSARG) != 0);
-			if (needsarg) {
-				append(new ALOAD(1));
-				append(new PUSH(cp, 1 + p.numparams));
-				append(factory.createInvoke(STR_LUAVALUE, "tableOf", TYPE_LUATABLE, ARG_TYPES_VARARGS_INT, Constants.INVOKESTATIC));
+			boolean needsArg = ((p.is_vararg & Lua.VARARG_NEEDSARG) != 0);
+			if (needsArg) {
+				main.visitVarInsn(ALOAD, 1);                        increment();
+				constantOpcode(main, p.numparams + 1);              increment();
+				METHOD_LUAVALUE_TABLEOF.inject(main, INVOKESTATIC); increment();
 				storeLocal(-1, slot++);
 			} else if (p.numparams > 0) {
-				append(new ALOAD(1));
-				append(new PUSH(cp, 1 + p.numparams));
-				append(factory.createInvoke(STR_VARARGS, "subargs", TYPE_VARARGS, ARG_TYPES_INT, Constants.INVOKEVIRTUAL));
-				append(new ASTORE(1));
+				main.visitVarInsn(ALOAD, 1);                        increment();
+				constantOpcode(main, p.numparams + 1);              increment();
+				METHOD_VARARGS_SUBARGS.inject(main, INVOKEVIRTUAL); increment();
+				main.visitVarInsn(ASTORE, 1);
 			}
 		} else {
 			// fixed arg function between 0 and 3 arguments
 			for (slot = 0; slot < p.numparams; slot++) {
-				this.plainSlotVars.put(Integer.valueOf(slot), Integer.valueOf(1 + slot));
+				this.plainSlotVars.put(slot, slot + 1);
 				if (pi.isUpvalueCreate(-1, slot)) {
-					append(new ALOAD(1 + slot));
+					main.visitVarInsn(ALOAD, 1);                    increment();
 					storeLocal(-1, slot);
 				}
 			}
@@ -243,151 +332,174 @@ public class JavaBuilder {
 
 		// gen method
 		resolveBranches();
-		mg.setMaxStack();
-		cg.addMethod(mg.getMethod());
-		main.dispose();
+		main.visitMaxs(0, 0);
+		main.visitEnd();
 
 		// convert to class bytes
-		try {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			cg.getJavaClass().dump(baos);
-			return baos.toByteArray();
-		} catch (IOException ioe) {
-			throw new RuntimeException("JavaClass.dump() threw " + ioe);
+		byte[] bytes = writer.toByteArray();
+		if (Config.verifySources) {
+			CheckClassAdapter.verify(new ClassReader(bytes), false, new PrintWriter(System.out));
 		}
+		return bytes;
 	}
 
 	public void dup() {
-		append(InstructionConstants.DUP);
+		main.visitInsn(DUP);
+		increment();
 	}
 
 	public void pop() {
-		append(InstructionConstants.POP);
+		main.visitInsn(POP);
+		increment();
 	}
 
 	public void loadNil() {
-		append(factory.createFieldAccess(STR_LUAVALUE, "NIL", TYPE_LUAVALUE, Constants.GETSTATIC));
+		main.visitFieldInsn(GETSTATIC, "org/luaj/vm2/LuaValue", "NIL", "Lorg/luaj/vm2/LuaValue;");
+		increment();
 	}
 
 	public void loadNone() {
-		append(factory.createFieldAccess(STR_LUAVALUE, "NONE", TYPE_LUAVALUE, Constants.GETSTATIC));
+		main.visitFieldInsn(GETSTATIC, "org/luaj/vm2/LuaValue", "NONE", "Lorg/luaj/vm2/LuaValue;");
+		increment();
 	}
 
 	public void loadBoolean(boolean b) {
 		String field = (b ? "TRUE" : "FALSE");
-		append(factory.createFieldAccess(STR_LUAVALUE, field, TYPE_LUABOOLEAN, Constants.GETSTATIC));
+		main.visitFieldInsn(GETSTATIC, "org/luaj/vm2/LuaValue", field, "Lorg/luaj/vm2/LuaBoolean;");
 	}
 
-	private int findSlot(int slot, Map<Integer, Integer> map, String prefix, Type type) {
-		Integer islot = Integer.valueOf(slot);
-		if (map.containsKey(islot))
-			return map.get(islot).intValue();
-		String name = prefix + slot;
-		LocalVariableGen local = mg.addLocalVariable(name, type, null, null);
-		int index = local.getIndex();
-		map.put(islot, Integer.valueOf(index));
-		return index;
+	private Map<Integer, Integer> plainSlotVars = new HashMap<>();
+	private Map<Integer, String> javaSlotNames = new HashMap<>();
+	private Map<Integer, Integer> upvalueSlotVars = new HashMap<>();
+
+	private int findSlot(int slot, Map<Integer, Integer> map, String prefix) {
+		Integer luaSlot = slot;
+		if (map.containsKey(luaSlot)) return map.get(luaSlot);
+
+		// This will always be an Upvalue/LuaValue so the slot size is 1 as it is a reference
+		int javaSlot = ++maxLocals;
+		javaSlotNames.put(javaSlot, prefix + slot); // This should probably be debug only or something
+		map.put(luaSlot, javaSlot);
+		return javaSlot;
 	}
 
-	private int findSlotIndex(int slot, boolean isupvalue) {
-		return isupvalue ?
-				findSlot(slot, upvalueSlotVars, PREFIX_UPVALUE_SLOT, TYPE_LOCALUPVALUE) :
-				findSlot(slot, plainSlotVars, PREFIX_PLAIN_SLOT, TYPE_LUAVALUE);
+	private int findSlotIndex(int slot, boolean isUpvalue) {
+		return isUpvalue ?
+				findSlot(slot, upvalueSlotVars, PREFIX_UPVALUE_SLOT) :
+				findSlot(slot, plainSlotVars, PREFIX_PLAIN_SLOT);
 	}
 
 	public void loadLocal(int pc, int slot) {
-		boolean isupval = pi.isUpvalueRefer(pc, slot);
-		int index = findSlotIndex(slot, isupval);
-		append(new ALOAD(index));
-		if (isupval) {
-			append(new PUSH(cp, 0));
-			append(InstructionConstants.AALOAD);
+		boolean isUpvalue = pi.isUpvalueRefer(pc, slot);
+		int index = findSlotIndex(slot, isUpvalue);
+
+		main.visitVarInsn(ALOAD, index); increment();
+		if (isUpvalue) {
+			main.visitInsn(ICONST_0);    increment();
+			main.visitInsn(AALOAD);      increment();
 		}
 	}
 
 	public void storeLocal(int pc, int slot) {
-		boolean isupval = pi.isUpvalueAssign(pc, slot);
-		int index = findSlotIndex(slot, isupval);
-		if (isupval) {
-			boolean isupcreate = pi.isUpvalueCreate(pc, slot);
-			if (isupcreate) {
-				append(factory.createInvoke(classname, "newupe", TYPE_LOCALUPVALUE, ARG_TYPES_NONE, Constants.INVOKESTATIC));
-				append(InstructionConstants.DUP);
-				append(new ASTORE(index));
+		boolean isUpvalue = pi.isUpvalueAssign(pc, slot);
+		int index = findSlotIndex(slot, isUpvalue);
+		if (isUpvalue) {
+			boolean isUpCreate = pi.isUpvalueCreate(pc, slot);
+			if (isUpCreate) {
+				// If we are creating the upvalue for the first time then we call LibFunction.newupe (but actually call
+				// <className>.newupe but I need to check that). The we duplicate the object, so it remains on the stack
+				// and store it
+				methodCurrentNewUpvalueEmpty.inject(main); increment();
+				main.visitInsn(DUP);                  increment();
+				main.visitVarInsn(ASTORE, index);     increment();
 			} else {
-				append(new ALOAD(index));
+				main.visitVarInsn(ALOAD, index);      increment();
 			}
-			append(InstructionConstants.SWAP);
-			append(new PUSH(cp, 0));
-			append(InstructionConstants.SWAP);
-			append(InstructionConstants.AASTORE);
+
+			// We swap the values which is the value and the array
+			// Then we get item 0 of the array
+			// And store to it
+			main.visitInsn(SWAP);             increment();
+			main.visitIntInsn(ICONST_0, 0);   increment();
+			main.visitInsn(SWAP);             increment();
+			main.visitInsn(AASTORE);          increment();
 		} else {
-			append(new ASTORE(index));
+			main.visitVarInsn(ASTORE, index); increment();
 		}
 	}
 
-	public void createUpvalues(int pc, int firstslot, int numslots) {
-		for (int i = 0; i < numslots; i++) {
-			int slot = firstslot + i;
+	public void createUpvalues(int pc, int firstSlot, int numSlots) {
+		for (int i = 0; i < numSlots; i++) {
+			int slot = firstSlot + i;
 			boolean isupcreate = pi.isUpvalueCreate(pc, slot);
 			if (isupcreate) {
 				int index = findSlotIndex(slot, true);
-				append(factory.createInvoke(classname, "newupn", TYPE_LOCALUPVALUE, ARG_TYPES_NONE, Constants.INVOKESTATIC));
-				append(new ASTORE(index));
+				methodCurrentNewUpvalueNil.inject(main); increment();
+				main.visitVarInsn(ASTORE, index);     increment();
 			}
 		}
 	}
 
 	public void convertToUpvalue(int pc, int slot) {
-		boolean isupassign = pi.isUpvalueAssign(pc, slot);
-		if (isupassign) {
+		boolean isUpvalueAssing = pi.isUpvalueAssign(pc, slot);
+		if (isUpvalueAssing) {
 			int index = findSlotIndex(slot, false);
-			append(new ALOAD(index));
-			append(factory.createInvoke(classname, "newupl", TYPE_LOCALUPVALUE, ARG_TYPES_LUAVALUE, Constants.INVOKESTATIC));
-			int upindex = findSlotIndex(slot, true);
-			append(new ASTORE(upindex));
+
+			// Load it from the slot, convert to an array and store it to the upvalue slot
+			main.visitVarInsn(ALOAD, index);              increment();
+			methodCurrentNewUpvalueValue.inject(main);    increment();
+			int upvalueIndex = findSlotIndex(slot, true);
+			main.visitVarInsn(ASTORE, upvalueIndex);      increment();
 		}
 	}
 
-	public void loadUpvalue(int upindex) {
-		boolean isrw = pi.isReadWriteUpvalue(pi.upvals[upindex]);
-		append(InstructionConstants.THIS);
-		if (isrw) {
-			append(factory.createFieldAccess(classname, upvalueName(upindex), TYPE_LOCALUPVALUE, Constants.GETFIELD));
-			append(new PUSH(cp, 0));
-			append(InstructionConstants.AALOAD);
+	private static String upvalueName(int upvalueIndex) {
+		return PREFIX_UPVALUE + upvalueIndex;
+	}
+
+	public void loadUpvalue(int upvalueIndex) {
+		boolean isReadWrite = pi.isReadWriteUpvalue(pi.upvals[upvalueIndex]);
+		main.visitVarInsn(ALOAD, 0); increment();
+
+		if (isReadWrite) {
+			// We get the first value of the array in <classname>.<upvalueName>
+			main.visitFieldInsn(GETFIELD, classname, upvalueName(upvalueIndex), TYPE_STR_LOCALUPVALUE); increment();
+			main.visitInsn(ICONST_0); increment();
+			main.visitInsn(AALOAD);   increment();
 		} else {
-			append(factory.createFieldAccess(classname, upvalueName(upindex), TYPE_LUAVALUE, Constants.GETFIELD));
+			// Not a 'proper' upvalue, so we just need to get the value itself
+			main.visitFieldInsn(GETFIELD, classname, upvalueName(upvalueIndex), TYPE_STR_LUAVALUE);     increment();
 		}
 	}
 
-	public void storeUpvalue(int pc, int upindex, int slot) {
-		boolean isrw = pi.isReadWriteUpvalue(pi.upvals[upindex]);
-		append(InstructionConstants.THIS);
-		if (isrw) {
-			append(factory.createFieldAccess(classname, upvalueName(upindex), TYPE_LOCALUPVALUE, Constants.GETFIELD));
-			append(new PUSH(cp, 0));
+	public void storeUpvalue(int pc, int upvalueIndex, int slot) {
+		boolean isReadWrite = pi.isReadWriteUpvalue(pi.upvals[upvalueIndex]);
+		main.visitVarInsn(ALOAD, 0); increment();
+		if (isReadWrite) {
+			// We set the first value of the array in <classname>.<upvalueName>
+			main.visitFieldInsn(GETFIELD, classname, upvalueName(upvalueIndex), TYPE_STR_LOCALUPVALUE); increment();
+			main.visitInsn(ICONST_0); increment();
 			loadLocal(pc, slot);
-			append(InstructionConstants.AASTORE);
+			main.visitInsn(AASTORE);  increment();
 		} else {
 			loadLocal(pc, slot);
-			append(factory.createFieldAccess(classname, upvalueName(upindex), TYPE_LUAVALUE, Constants.PUTFIELD));
+			main.visitFieldInsn(PUTFIELD, classname, upvalueName(upvalueIndex), TYPE_STR_LUAVALUE);     increment();
 		}
 	}
 
 	public void newTable(int b, int c) {
-		append(new PUSH(cp, b));
-		append(new PUSH(cp, c));
-		append(factory.createInvoke(STR_LUAVALUE, "tableOf", TYPE_LUATABLE, ARG_TYPES_INT_INT, Constants.INVOKESTATIC));
+		constantOpcode(main, b); increment();
+		constantOpcode(main, c); increment();
+		METHOD_LUAVALUE_TABLEOF_DIMS.inject(main); increment();
 	}
 
 	public void loadEnv() {
-		append(InstructionConstants.THIS);
-		append(factory.createFieldAccess(classname, "env", TYPE_LUAVALUE, Constants.GETFIELD));
+		main.visitVarInsn(ALOAD, 0); increment();
+		main.visitFieldInsn(GETFIELD, classname, "env", TYPE_STR_LUAVALUE); increment();
 	}
 
 	public void loadVarargs() {
-		append(new ALOAD(1));
+		main.visitVarInsn(ALOAD, 1); increment();
 	}
 
 	public void loadVarargs(int argindex) {
@@ -397,38 +509,37 @@ public class JavaBuilder {
 
 	public void arg(int argindex) {
 		if (argindex == 1) {
-			append(factory.createInvoke(STR_VARARGS, "arg1", TYPE_LUAVALUE, ARG_TYPES_NONE, Constants.INVOKEVIRTUAL));
+			METHOD_VARARGS_ARG1.inject(main); increment();
 		} else {
-			append(new PUSH(cp, argindex));
-			append(factory.createInvoke(STR_VARARGS, "arg", TYPE_LUAVALUE, ARG_TYPES_INT, Constants.INVOKEVIRTUAL));
+			constantOpcode(main, argindex);   increment();
+			METHOD_VARARGS_ARG.inject(main);  increment();
 		}
 	}
 
 	private int getVarresultIndex() {
-		if (varresult == null)
-			varresult = mg.addLocalVariable(NAME_VARRESULT, TYPE_VARARGS, null, null);
-		return varresult.getIndex();
+		if (varargsLocal < 0) varargsLocal = ++maxLocals;
+		return varargsLocal;
 	}
 
 	public void loadVarresult() {
-		append(new ALOAD(getVarresultIndex()));
+		main.visitVarInsn(ALOAD, getVarresultIndex()); increment();
 	}
 
 	public void storeVarresult() {
-		append(new ASTORE(getVarresultIndex()));
+		main.visitVarInsn(ASTORE, getVarresultIndex()); increment();
 	}
 
 	public void subargs(int firstarg) {
-		append(new PUSH(cp, firstarg));
-		append(factory.createInvoke(STR_VARARGS, "subargs", TYPE_VARARGS, ARG_TYPES_INT, Constants.INVOKEVIRTUAL));
+		constantOpcode(main, firstarg);      increment();
+		METHOD_VARARGS_SUBARGS.inject(main); increment();
 	}
 
 	public void getTable() {
-		append(factory.createInvoke(STR_LUAVALUE, "get", TYPE_LUAVALUE, ARG_TYPES_LUAVALUE, Constants.INVOKEVIRTUAL));
+		METHOD_LUAVALUE_GET.inject(main); increment();
 	}
 
 	public void setTable() {
-		append(factory.createInvoke(STR_LUAVALUE, "set", Type.VOID, ARG_TYPES_LUAVALUE_LUAVALUE, Constants.INVOKEVIRTUAL));
+		METHOD_LUAVALUE_SET.inject(main); increment();
 	}
 
 	public void unaryop(int o) {
@@ -436,7 +547,7 @@ public class JavaBuilder {
 		switch (o) {
 			default:
 			case Lua.OP_UNM:
-				op = "neg";
+				op = "min";
 				break;
 			case Lua.OP_NOT:
 				op = "not";
@@ -445,7 +556,10 @@ public class JavaBuilder {
 				op = "len";
 				break;
 		}
-		append(factory.createInvoke(STR_LUAVALUE, op, TYPE_LUAVALUE, Type.NO_ARGS, Constants.INVOKEVIRTUAL));
+
+		// TODO: More constants, less magic variables
+		main.visitMethodInsn(INVOKEVIRTUAL, TYPE_STR_LUAVALUE, op, "()" + TYPE_STR_LUAVALUE, false);
+		increment();
 	}
 
 	public void binaryop(int o) {
@@ -471,7 +585,8 @@ public class JavaBuilder {
 				op = "pow";
 				break;
 		}
-		append(factory.createInvoke(STR_LUAVALUE, op, TYPE_LUAVALUE, ARG_TYPES_LUAVALUE, Constants.INVOKEVIRTUAL));
+		main.visitMethodInsn(INVOKEVIRTUAL, TYPE_STR_LUAVALUE, op, "(" + TYPE_STR_LUAVALUE + ")" + TYPE_STR_LUAVALUE, false);
+		increment();
 	}
 
 	public void compareop(int o) {
@@ -488,23 +603,28 @@ public class JavaBuilder {
 				op = "lteq_b";
 				break;
 		}
-		append(factory.createInvoke(STR_LUAVALUE, op, Type.BOOLEAN, ARG_TYPES_LUAVALUE, Constants.INVOKEVIRTUAL));
+		main.visitMethodInsn(INVOKEVIRTUAL, TYPE_STR_LUAVALUE, op, "(" + TYPE_STR_LUAVALUE + ")z" , false);
+		increment();
 	}
 
 	public void areturn() {
-		append(InstructionConstants.ARETURN);
+		main.visitInsn(RETURN);
+		increment();
 	}
 
 	public void toBoolean() {
-		append(factory.createInvoke(STR_LUAVALUE, "toboolean", Type.BOOLEAN, Type.NO_ARGS, Constants.INVOKEVIRTUAL));
+		METHOD_LUAVALUE_TO_BOOL.inject(main);
+		increment();
 	}
 
 	public void tostring() {
-		append(factory.createInvoke(STR_BUFFER, "tostring", TYPE_LUASTRING, Type.NO_ARGS, Constants.INVOKEVIRTUAL));
+		METHOD_BUFFER_TO_STR.inject(main);
+		increment();
 	}
 
 	public void isNil() {
-		append(factory.createInvoke(STR_LUAVALUE, "isnil", Type.BOOLEAN, Type.NO_ARGS, Constants.INVOKEVIRTUAL));
+		METHOD_LUAVALUE_IS_NIL.inject(main);
+		increment();
 	}
 
 	public void testForLoop() {
@@ -547,9 +667,6 @@ public class JavaBuilder {
 				break;
 		}
 	}
-
-
-	// ------------------------ closures ------------------------
 
 	public void newVarargsVarresult(int pc, int firstslot, int nslots) {
 		loadArrayArgs(pc, firstslot, nslots);
@@ -602,6 +719,9 @@ public class JavaBuilder {
 		}
 	}
 
+
+	// ------------------------ closures ------------------------
+
 	public void closureCreate(String protoname) {
 		append(factory.createNew(new ObjectType(protoname)));
 		append(InstructionConstants.DUP);
@@ -629,6 +749,8 @@ public class JavaBuilder {
 		append(new ALOAD(index));
 		append(factory.createFieldAccess(protoname, destname, uptype, Constants.PUTFIELD));
 	}
+
+	private Map<LuaValue, String> constants = new HashMap<LuaValue, String>();
 
 	public void loadConstant(LuaValue value) {
 		switch (value.type()) {
@@ -706,6 +828,11 @@ public class JavaBuilder {
 		return name;
 	}
 
+	// --------------------- branching support -------------------------
+	public static final int BRANCH_GOTO = 1;
+	public static final int BRANCH_IFNE = 2;
+	public static final int BRANCH_IFEQ = 3;
+
 	public void addBranch(int pc, int branchType, int targetpc) {
 		switch (branchType) {
 			default:
@@ -724,26 +851,16 @@ public class JavaBuilder {
 	}
 
 
-	private void append(Instruction i) {
-		conditionalSetBeginningOfLua(main.append(i));
-	}
-
-	private void append(CompoundInstruction i) {
-		conditionalSetBeginningOfLua(main.append(i));
-	}
-
-	private void append(BranchInstruction i) {
-		conditionalSetBeginningOfLua(main.append(i));
-	}
-
-	private void conditionalSetBeginningOfLua(InstructionHandle ih) {
-		if (beginningOfLuaInstruction == null)
-			beginningOfLuaInstruction = ih;
+	private void increment() {
+		++pc;
+		if(beginningOfLuaInstruction < 0) {
+			beginningOfLuaInstruction = pc;
+		}
 	}
 
 	public void onEndOfLuaInstruction(int pc) {
 		branchDestHandles[pc] = beginningOfLuaInstruction;
-		beginningOfLuaInstruction = null;
+		beginningOfLuaInstruction = -1;
 	}
 
 	private void resolveBranches() {

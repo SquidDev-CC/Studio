@@ -90,7 +90,7 @@ public class APIBuilder {
 		className = originalName + APIClassLoader.SUFFIX;
 		originalWhole = Type.getDescriptor(reflection);
 
-		writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+		writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 		write();
 	}
 
@@ -406,7 +406,9 @@ public class APIBuilder {
 
 	public byte[] toByteArray() {
 		byte[] bytes = writer.toByteArray();
-		if (Config.verifySources) CheckClassAdapter.verify(new ClassReader(bytes), false, new PrintWriter(System.out));
+		if (Config.verifySources) {
+			CheckClassAdapter.verify(new ClassReader(bytes), false, new PrintWriter(System.out));
+		}
 
 		return bytes;
 	}
