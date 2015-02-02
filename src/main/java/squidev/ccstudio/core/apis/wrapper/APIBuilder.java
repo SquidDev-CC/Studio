@@ -106,10 +106,10 @@ public class APIBuilder {
 		);
 
 		// Declare METHOD_NAMES
-		writer.visitField(ACC_PRIVATE + ACC_FINAL + ACC_STATIC, "METHOD_NAMES", "[[Ljava/lang/String;", null, null);
+		writer.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, "METHOD_NAMES", "[[Ljava/lang/String;", null, null);
 
 		// Declare NAMES
-		writer.visitField(ACC_PRIVATE + ACC_FINAL + ACC_STATIC, "NAMES", "[Ljava/lang/String;", null, null);
+		writer.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, "NAMES", "[Ljava/lang/String;", null, null);
 
 		// Read all methods
 		methods = new ArrayList<>();

@@ -16,25 +16,10 @@ public class AsmUtils {
 	 * Get the appropriate constant opcode
 	 *
 	 * @param number The opcode number
-	 * @return ICONST_n or -1 if doesn't exist
+	 * @return ICONST_n
 	 */
 	public static int getConstOpcode(int number) {
-		switch (number) {
-			case 0:
-				return ICONST_0;
-			case 1:
-				return ICONST_1;
-			case 2:
-				return ICONST_2;
-			case 3:
-				return ICONST_3;
-			case 4:
-				return ICONST_4;
-			case 5:
-				return ICONST_5;
-		}
-
-		return -1;
+		return ICONST_0 + number;
 	}
 
 	/**
@@ -44,12 +29,22 @@ public class AsmUtils {
 	 * @param number The constant to insert
 	 */
 	public static void constantOpcode(MethodVisitor mv, int number) {
-		if (number >= 0 && number <= 5) {
+		if (number >= -1 && number <= 5) {
 			mv.visitInsn(getConstOpcode(number));
 		} else if(number >= -128 && number <= 127) {
 			mv.visitIntInsn(BIPUSH, number);
 		} else if(number >= -32768 && number <= 32767) {
 			mv.visitIntInsn(SIPUSH, (short)number);
+		} else {
+			mv.visitLdcInsn(number);
+		}
+	}
+
+	public static void constantOpcode(MethodVisitor mv, double number) {
+		if(number == 0.0D) {
+			mv.visitInsn(DCONST_0);
+		} else if(number == 1.0D) {
+			mv.visitInsn(DCONST_1);
 		} else {
 			mv.visitLdcInsn(number);
 		}

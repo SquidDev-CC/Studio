@@ -25,6 +25,7 @@ package org.luaj.vm2.luajc;
 import org.apache.bcel.Constants;
 import org.apache.bcel.generic.*;
 import org.luaj.vm2.*;
+import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -141,23 +142,56 @@ public class JavaBuilder {
 	};
 
 	// Table functions
-	private static final TinyMethod METHOD_LUAVALUE_TABLEOF = TinyMethod.tryConstruct(LuaValue.class, "tableOf", Varargs.class, int.class);
-	private static final TinyMethod METHOD_LUAVALUE_TABLEOF_DIMS = TinyMethod.tryConstruct(LuaValue.class, "tableOf", int.class, int.class);
-	private static final TinyMethod METHOD_LUAVALUE_GET = TinyMethod.tryConstruct(LuaValue.class, "get", LuaValue.class);
-	private static final TinyMethod METHOD_LUAVALUE_SET = TinyMethod.tryConstruct(LuaValue.class, "set", LuaValue.class);
+	private static final TinyMethod METHOD_TABLEOF = TinyMethod.tryConstruct(LuaValue.class, "tableOf", Varargs.class, int.class);
+	private static final TinyMethod METHOD_TABLEOF_DIMS = TinyMethod.tryConstruct(LuaValue.class, "tableOf", int.class, int.class);
+	private static final TinyMethod METHOD_TABLE_GET = TinyMethod.tryConstruct(LuaValue.class, "get", LuaValue.class);
+	private static final TinyMethod METHOD_TABLE_SET = TinyMethod.tryConstruct(LuaValue.class, "set", LuaValue.class);
 
 	// Varargs
 	private static final TinyMethod METHOD_VARARGS_ARG1 = TinyMethod.tryConstruct(Varargs.class, "arg1");
 	private static final TinyMethod METHOD_VARARGS_ARG = TinyMethod.tryConstruct(Varargs.class, "arg", int.class);
 	private static final TinyMethod METHOD_VARARGS_SUBARGS = TinyMethod.tryConstruct(Varargs.class, "subargs", int.class);
 
+	// Varargs factory
+	private static final TinyMethod METHOD_VARARGS_ONE = TinyMethod.tryConstruct(LuaValue.class, "varargsOf", LuaValue.class, Varargs.class);
+	private static final TinyMethod METHOD_VARARGS_TWO = TinyMethod.tryConstruct(LuaValue.class, "varargsOf", LuaValue.class, LuaValue.class, Varargs.class);
+	private static final TinyMethod METHOD_VARARGS_MANY = TinyMethod.tryConstruct(LuaValue.class, "varargsOf", LuaValue[].class);
+	private static final TinyMethod METHOD_VARARGS_MANY_VAR = TinyMethod.tryConstruct(LuaValue.class, "varargsOf", LuaValue[].class, Varargs.class);
+
 	// Type conversion
 	private static final TinyMethod METHOD_LUAVALUE_TO_BOOL = TinyMethod.tryConstruct(LuaValue.class, "toboolean");
 	private static final TinyMethod METHOD_BUFFER_TO_STR = TinyMethod.tryConstruct(Buffer.class, "tostring");
 
 	// Booleans
-	private static final TinyMethod METHOD_LUAVALUE_TESTFOR_B = TinyMethod.tryConstruct(LuaValue.class, "testfor_b", LuaValue.class, LuaValue.class);
-	private static final TinyMethod METHOD_LUAVALUE_IS_NIL = TinyMethod.tryConstruct(LuaValue.class, "isnil");
+	private static final TinyMethod METHOD_TESTFOR_B = TinyMethod.tryConstruct(LuaValue.class, "testfor_b", LuaValue.class, LuaValue.class);
+	private static final TinyMethod METHOD_IS_NIL = TinyMethod.tryConstruct(LuaValue.class, "isnil");
+
+	// Calling
+	// Normal
+	private static final TinyMethod METHOD_CALL_NONE = TinyMethod.tryConstruct(LuaValue.class, "call");
+	private static final TinyMethod METHOD_CALL_ONE = TinyMethod.tryConstruct(LuaValue.class, "call", LuaValue.class);
+	private static final TinyMethod METHOD_CALL_TWO = TinyMethod.tryConstruct(LuaValue.class, "call", LuaValue.class, LuaValue.class);
+	private static final TinyMethod METHOD_CALL_THREE = TinyMethod.tryConstruct(LuaValue.class, "call", LuaValue.class, LuaValue.class, LuaValue.class);
+
+	// Tail call
+	private static final TinyMethod METHOD_TAILCALL = TinyMethod.tryConstruct(LuaValue.class, "tailcallOf", LuaValue.class, Varargs.class);
+
+	// Invoke (because that is different to call?) Well, it is but really silly
+	private static final TinyMethod METHOD_INVOKE_VAR = TinyMethod.tryConstruct(LuaValue.class, "invoke", Varargs.class);
+	private static final TinyMethod METHOD_INVOKE_TWO = TinyMethod.tryConstruct(LuaValue.class, "invoke");
+	private static final TinyMethod METHOD_INVOKE_NONE = TinyMethod.tryConstruct(LuaValue.class, "invoke", LuaValue.class, Varargs.class);
+	private static final TinyMethod METHOD_INVOKE_THREE = TinyMethod.tryConstruct(LuaValue.class, "invoke", LuaValue.class, LuaValue.class, Varargs.class);
+
+	// ValueOf
+	private static final TinyMethod METHOD_VALUEOF_INT = TinyMethod.tryConstruct(LuaValue.class, "valueOf", int.class);
+	private static final TinyMethod METHOD_VALUEOF_DOUBLE = TinyMethod.tryConstruct(LuaValue.class, "valueOf", double.class);
+	private static final TinyMethod METHOD_VALUEOF_STRING = TinyMethod.tryConstruct(LuaString.class, "valueOf", String.class);
+	private static final TinyMethod METHOD_VALUEOF_CHARARRAY = TinyMethod.tryConstruct(LuaString.class, "valueOf", char[].class);
+
+	// Misc
+	private static final TinyMethod METHOD_SETENV = TinyMethod.tryConstruct(LuaValue.class, "setfenv", LuaValue.class);
+	private static final TinyMethod METHOD_TO_CHARARRAY = TinyMethod.tryConstruct(String.class, "toCharArray");
+	private static final TinyMethod METHOD_RAWSET = TinyMethod.tryConstruct(LuaValue.class, "rawset", int.class, LuaValue.class);
 
 	// TODO: Can this be LibFunction? Is there a performance change?
 	private final TinyMethod methodCurrentNewUpvalueEmpty;
@@ -180,7 +214,7 @@ public class JavaBuilder {
 	private final ClassWriter writer;
 
 	// main instruction list for the main function of this class
-	private MethodVisitor init;
+	private final MethodVisitor init;
 	private final MethodVisitor main;
 
 	/**
@@ -257,6 +291,10 @@ public class JavaBuilder {
 
 		// Create the invoke method
 		main = writer.visitMethod(ACC_PUBLIC + ACC_FINAL, superType.methodName, superType.signature, null, null);
+		main.visitCode();
+
+		init = writer.visitMethod(ACC_STATIC, "<clinit>", "V()", null, null);
+		init.visitCode();
 
 		// Initialize the values in the slots
 		initializeSlots();
@@ -271,7 +309,6 @@ public class JavaBuilder {
 	public void initializeSlots() {
 		int slot;
 		createUpvalues(-1, 0, p.maxstacksize);
-		MethodVisitor main = this.main;
 
 		if (superclassType == SUPERTYPE_VARARGS) {
 			for (slot = 0; slot < p.numparams; slot++) {
@@ -286,7 +323,7 @@ public class JavaBuilder {
 			if (needsArg) {
 				main.visitVarInsn(ALOAD, 1);                        increment();
 				constantOpcode(main, p.numparams + 1);              increment();
-				METHOD_LUAVALUE_TABLEOF.inject(main, INVOKESTATIC); increment();
+				METHOD_TABLEOF.inject(main, INVOKESTATIC); increment();
 				storeLocal(-1, slot++);
 			} else if (p.numparams > 0) {
 				main.visitVarInsn(ALOAD, 1);                        increment();
@@ -315,25 +352,25 @@ public class JavaBuilder {
 	}
 
 	public byte[] completeClass() {
+		// Add class initializer
+		init.visitInsn(RETURN);
+		init.visitMaxs(0, 0);
+		init.visitEnd();
 
-		// add class initializer
-		if (!init.isEmpty()) {
-			MethodGen mg = new MethodGen(Constants.ACC_STATIC, Type.VOID,
-					ARG_TYPES_NONE, new String[]{}, "<clinit>",
-					cg.getClassName(), init, cg.getConstantPool());
-			init.append(InstructionConstants.RETURN);
-			mg.setMaxStack();
-			cg.addMethod(mg.getMethod());
-			init.dispose();
-		}
+		// Add default constructor
+		MethodVisitor construct = writer.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+		construct.visitVarInsn(ALOAD, 0);
+		construct.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+		construct.visitInsn(RETURN);
+		construct.visitMaxs(1, 1);
+		construct.visitEnd();
 
-		// add default constructor
-		cg.addEmptyConstructor(Constants.ACC_PUBLIC);
-
-		// gen method
+		// Gen method
 		resolveBranches();
 		main.visitMaxs(0, 0);
 		main.visitEnd();
+
+		writer.visitEnd();
 
 		// convert to class bytes
 		byte[] bytes = writer.toByteArray();
@@ -490,7 +527,7 @@ public class JavaBuilder {
 	public void newTable(int b, int c) {
 		constantOpcode(main, b); increment();
 		constantOpcode(main, c); increment();
-		METHOD_LUAVALUE_TABLEOF_DIMS.inject(main); increment();
+		METHOD_TABLEOF_DIMS.inject(main); increment();
 	}
 
 	public void loadEnv() {
@@ -535,11 +572,11 @@ public class JavaBuilder {
 	}
 
 	public void getTable() {
-		METHOD_LUAVALUE_GET.inject(main); increment();
+		METHOD_TABLE_GET.inject(main); increment();
 	}
 
 	public void setTable() {
-		METHOD_LUAVALUE_SET.inject(main); increment();
+		METHOD_TABLE_SET.inject(main); increment();
 	}
 
 	public void unaryop(int o) {
@@ -623,22 +660,23 @@ public class JavaBuilder {
 	}
 
 	public void isNil() {
-		METHOD_LUAVALUE_IS_NIL.inject(main);
+		METHOD_IS_NIL.inject(main);
 		increment();
 	}
 
 	public void testForLoop() {
-		append(factory.createInvoke(STR_LUAVALUE, "testfor_b", Type.BOOLEAN, ARG_TYPES_LUAVALUE_LUAVALUE, Constants.INVOKEVIRTUAL));
+		METHOD_TESTFOR_B.inject(main);
+		increment();
 	}
 
 	public void loadArrayArgs(int pc, int firstslot, int nargs) {
-		append(new PUSH(cp, nargs));
-		append(new ANEWARRAY(cp.addClass(STR_LUAVALUE)));
+		constantOpcode(main, nargs);                      increment();
+		main.visitTypeInsn(ANEWARRAY, TYPE_STR_LUAVALUE); increment();
 		for (int i = 0; i < nargs; i++) {
-			append(InstructionConstants.DUP);
-			append(new PUSH(cp, i));
+			main.visitInsn(DUP);     increment();
+			constantOpcode(main, i); increment();
 			loadLocal(pc, firstslot++);
-			append(new AASTORE());
+			main.visitInsn(AASTORE); increment();
 		}
 	}
 
@@ -653,17 +691,17 @@ public class JavaBuilder {
 			case 2:
 				loadLocal(pc, firstslot);
 				loadLocal(pc, firstslot + 1);
-				append(factory.createInvoke(STR_LUAVALUE, "varargsOf", TYPE_VARARGS, ARG_TYPES_LUAVALUE_VARARGS, Constants.INVOKESTATIC));
+				METHOD_VARARGS_ONE.inject(main); increment();
 				break;
 			case 3:
 				loadLocal(pc, firstslot);
 				loadLocal(pc, firstslot + 1);
 				loadLocal(pc, firstslot + 2);
-				append(factory.createInvoke(STR_LUAVALUE, "varargsOf", TYPE_VARARGS, ARG_TYPES_LUAVALUE_LUAVALUE_VARARGS, Constants.INVOKESTATIC));
+				METHOD_VARARGS_TWO.inject(main); increment();
 				break;
 			default:
 				loadArrayArgs(pc, firstslot, nargs);
-				append(factory.createInvoke(STR_LUAVALUE, "varargsOf", TYPE_VARARGS, ARG_TYPES_LUAVALUEARRAY, Constants.INVOKESTATIC));
+				METHOD_VARARGS_MANY.inject(main); increment();
 				break;
 		}
 	}
@@ -671,22 +709,22 @@ public class JavaBuilder {
 	public void newVarargsVarresult(int pc, int firstslot, int nslots) {
 		loadArrayArgs(pc, firstslot, nslots);
 		loadVarresult();
-		append(factory.createInvoke(STR_LUAVALUE, "varargsOf", TYPE_VARARGS, ARG_TYPES_LUAVALUEARRAY_VARARGS, Constants.INVOKESTATIC));
+		METHOD_VARARGS_MANY_VAR.inject(main); increment();
 	}
 
 	public void call(int nargs) {
 		switch (nargs) {
 			case 0:
-				append(factory.createInvoke(STR_LUAVALUE, "call", TYPE_LUAVALUE, ARG_TYPES_NONE, Constants.INVOKEVIRTUAL));
+				METHOD_CALL_NONE.inject(main); increment();
 				break;
 			case 1:
-				append(factory.createInvoke(STR_LUAVALUE, "call", TYPE_LUAVALUE, ARG_TYPES_LUAVALUE, Constants.INVOKEVIRTUAL));
+				METHOD_CALL_ONE.inject(main); increment();
 				break;
 			case 2:
-				append(factory.createInvoke(STR_LUAVALUE, "call", TYPE_LUAVALUE, ARG_TYPES_LUAVALUE_LUAVALUE, Constants.INVOKEVIRTUAL));
+				METHOD_CALL_TWO.inject(main); increment();
 				break;
 			case 3:
-				append(factory.createInvoke(STR_LUAVALUE, "call", TYPE_LUAVALUE, ARG_TYPES_LUAVALUE_LUAVALUE_LUAVALUE, Constants.INVOKEVIRTUAL));
+				METHOD_CALL_THREE.inject(main); increment();
 				break;
 			default:
 				throw new IllegalArgumentException("can't call with " + nargs + " args");
@@ -694,25 +732,25 @@ public class JavaBuilder {
 	}
 
 	public void newTailcallVarargs() {
-		append(factory.createInvoke(STR_LUAVALUE, "tailcallOf", TYPE_VARARGS, ARG_TYPES_LUAVALUE_VARARGS, Constants.INVOKESTATIC));
+		METHOD_TAILCALL.inject(main); increment();
 	}
 
 	public void invoke(int nargs) {
 		switch (nargs) {
 			case -1:
-				append(factory.createInvoke(STR_LUAVALUE, "invoke", TYPE_VARARGS, ARG_TYPES_VARARGS, Constants.INVOKEVIRTUAL));
+				METHOD_INVOKE_VAR.inject(main); increment();
 				break;
 			case 0:
-				append(factory.createInvoke(STR_LUAVALUE, "invoke", TYPE_VARARGS, ARG_TYPES_NONE, Constants.INVOKEVIRTUAL));
+				METHOD_INVOKE_NONE.inject(main); increment();
 				break;
 			case 1:
-				append(factory.createInvoke(STR_LUAVALUE, "invoke", TYPE_VARARGS, ARG_TYPES_VARARGS, Constants.INVOKEVIRTUAL));
+				METHOD_INVOKE_VAR.inject(main); increment(); // It is only one item so we can call it with a varargs
 				break;
 			case 2:
-				append(factory.createInvoke(STR_LUAVALUE, "invoke", TYPE_VARARGS, ARG_TYPES_LUAVALUE_VARARGS, Constants.INVOKEVIRTUAL));
+				METHOD_INVOKE_TWO.inject(main); increment();
 				break;
 			case 3:
-				append(factory.createInvoke(STR_LUAVALUE, "invoke", TYPE_VARARGS, ARG_TYPES_LUAVALUE_LUAVALUE_VARARGS, Constants.INVOKEVIRTUAL));
+				METHOD_INVOKE_THREE.inject(main); increment();
 				break;
 			default:
 				throw new IllegalArgumentException("can't invoke with " + nargs + " args");
@@ -723,34 +761,38 @@ public class JavaBuilder {
 	// ------------------------ closures ------------------------
 
 	public void closureCreate(String protoname) {
-		append(factory.createNew(new ObjectType(protoname)));
-		append(InstructionConstants.DUP);
-		append(factory.createInvoke(protoname, "<init>", Type.VOID, Type.NO_ARGS, Constants.INVOKESPECIAL));
-		append(InstructionConstants.DUP);
+		main.visitTypeInsn(NEW, protoname); increment();
+		main.visitInsn(DUP);                increment();
+		main.visitMethodInsn(INVOKESPECIAL, protoname, "()V", false); increment();
+		main.visitInsn(DUP);                increment();
 		loadEnv();
-		append(factory.createInvoke(STR_LUAVALUE, "setfenv", Type.VOID, ARG_TYPES_LUAVALUE, Constants.INVOKEVIRTUAL));
+		METHOD_SETENV.inject(main);         increment();
 	}
 
-	public void closureInitUpvalueFromUpvalue(String protoname, int newup, int upindex) {
-		boolean isrw = pi.isReadWriteUpvalue(pi.upvals[upindex]);
-		Type uptype = isrw ? TYPE_LOCALUPVALUE : TYPE_LUAVALUE;
-		String srcname = upvalueName(upindex);
-		String destname = upvalueName(newup);
-		append(InstructionConstants.THIS);
-		append(factory.createFieldAccess(classname, srcname, uptype, Constants.GETFIELD));
-		append(factory.createFieldAccess(protoname, destname, uptype, Constants.PUTFIELD));
+	public void closureInitUpvalueFromUpvalue(String protoName, int newUpvalue, int upvalueIndex) {
+		boolean isReadWrite = pi.isReadWriteUpvalue(pi.upvals[upvalueIndex]);
+
+		String type = isReadWrite ? TYPE_STR_LOCALUPVALUE : TYPE_STR_LUAVALUE;
+		String srcName = upvalueName(upvalueIndex);
+		String destName = upvalueName(newUpvalue);
+
+		main.visitVarInsn(ALOAD, 0);                              increment();
+		// Get from one field and set to the other
+		main.visitFieldInsn(GETFIELD, classname, srcName, type);  increment();
+		main.visitFieldInsn(PUTFIELD, protoName, destName, type); increment();
 	}
 
-	public void closureInitUpvalueFromLocal(String protoname, int newup, int pc, int srcslot) {
-		boolean isrw = pi.isReadWriteUpvalue(pi.vars[srcslot][pc].upvalue);
-		Type uptype = isrw ? TYPE_LOCALUPVALUE : TYPE_LUAVALUE;
-		String destname = upvalueName(newup);
-		int index = findSlotIndex(srcslot, isrw);
-		append(new ALOAD(index));
-		append(factory.createFieldAccess(protoname, destname, uptype, Constants.PUTFIELD));
+	public void closureInitUpvalueFromLocal(String protoName, int newUpvalue, int pc, int srcSlot) {
+		boolean isReadWrite = pi.isReadWriteUpvalue(pi.vars[srcSlot][pc].upvalue);
+		String type = isReadWrite ? TYPE_STR_LOCALUPVALUE : TYPE_STR_LUAVALUE;
+		String destName = upvalueName(newUpvalue);
+		int index = findSlotIndex(srcSlot, isReadWrite);
+
+		main.visitVarInsn(ALOAD, index);                          increment();
+		main.visitFieldInsn(PUTFIELD, protoName, destName, type); increment();
 	}
 
-	private Map<LuaValue, String> constants = new HashMap<LuaValue, String>();
+	private Map<LuaValue, String> constants = new HashMap<>();
 
 	public void loadConstant(LuaValue value) {
 		switch (value.type()) {
@@ -771,7 +813,8 @@ public class JavaBuilder {
 							createLuaStringField(value.checkstring());
 					constants.put(value, name);
 				}
-				append(factory.createGetStatic(classname, name, TYPE_LUAVALUE));
+				main.visitFieldInsn(GETSTATIC, classname, name, TYPE_STR_LUAVALUE);
+				increment();
 				break;
 			default:
 				throw new IllegalArgumentException("bad constant type: " + value.type());
@@ -780,51 +823,41 @@ public class JavaBuilder {
 
 	private String createLuaIntegerField(int value) {
 		String name = PREFIX_CONSTANT + constants.size();
-		FieldGen fg = new FieldGen(Constants.ACC_STATIC | Constants.ACC_FINAL,
-				TYPE_LUAVALUE, name, cp);
-		cg.addField(fg.getField());
-		init.append(new PUSH(cp, value));
-		init.append(factory.createInvoke(STR_LUAVALUE, "valueOf",
-				TYPE_LUAINTEGER, ARG_TYPES_INT, Constants.INVOKESTATIC));
-		init.append(factory.createPutStatic(classname, name, TYPE_LUAVALUE));
+		writer.visitField(ACC_STATIC | ACC_FINAL, name, TYPE_STR_LUAVALUE, null, null);
+
+		constantOpcode(init, value);
+		METHOD_VALUEOF_INT.inject(init);
+		init.visitFieldInsn(PUTSTATIC, classname, name, TYPE_STR_LUAVALUE);
 		return name;
 	}
 
 	private String createLuaDoubleField(double value) {
 		String name = PREFIX_CONSTANT + constants.size();
-		FieldGen fg = new FieldGen(Constants.ACC_STATIC | Constants.ACC_FINAL,
-				TYPE_LUAVALUE, name, cp);
-		cg.addField(fg.getField());
-		init.append(new PUSH(cp, value));
-		init.append(factory.createInvoke(STR_LUAVALUE, "valueOf",
-				TYPE_LUANUMBER, ARG_TYPES_DOUBLE, Constants.INVOKESTATIC));
-		init.append(factory.createPutStatic(classname, name, TYPE_LUAVALUE));
+		writer.visitField(ACC_STATIC | ACC_FINAL, name, TYPE_STR_LUAVALUE, null, null);
+		constantOpcode(init, value);
+		METHOD_VALUEOF_DOUBLE.inject(init);
+		init.visitFieldInsn(PUTSTATIC, classname, name, TYPE_STR_LUAVALUE);
 		return name;
 	}
 
 	private String createLuaStringField(LuaString value) {
 		String name = PREFIX_CONSTANT + constants.size();
-		FieldGen fg = new FieldGen(Constants.ACC_STATIC | Constants.ACC_FINAL,
-				TYPE_LUAVALUE, name, cp);
-		cg.addField(fg.getField());
+		writer.visitField(ACC_STATIC | ACC_FINAL, name, TYPE_STR_LUAVALUE, null, null);
+
 		LuaString ls = value.checkstring();
 		if (ls.isValidUtf8()) {
-			init.append(new PUSH(cp, value.tojstring()));
-			init.append(factory.createInvoke(STR_LUASTRING, "valueOf",
-					TYPE_LUASTRING, ARG_TYPES_STRING, Constants.INVOKESTATIC));
+			init.visitLdcInsn(value.tojstring());
+			METHOD_VALUEOF_STRING.inject(main);
 		} else {
 			char[] c = new char[ls.m_length];
-			for (int j = 0; j < ls.m_length; j++)
+			for (int j = 0; j < ls.m_length; j++) {
 				c[j] = (char) (0xff & (int) (ls.m_bytes[ls.m_offset + j]));
-			init.append(new PUSH(cp, new String(c)));
-			init.append(factory.createInvoke(STR_STRING, "toCharArray",
-					TYPE_CHARARRAY, Type.NO_ARGS,
-					Constants.INVOKEVIRTUAL));
-			init.append(factory.createInvoke(STR_LUASTRING, "valueOf",
-					TYPE_LUASTRING, ARG_TYPES_CHARARRAY,
-					Constants.INVOKESTATIC));
+			}
+			init.visitLdcInsn(new String(c));
+			METHOD_TO_CHARARRAY.inject(init);
+			METHOD_VALUEOF_CHARARRAY.inject(init);
 		}
-		init.append(factory.createPutStatic(classname, name, TYPE_LUAVALUE));
+		init.visitFieldInsn(PUTSTATIC, classname, name, TYPE_STR_LUAVALUE);
 		return name;
 	}
 
@@ -833,25 +866,30 @@ public class JavaBuilder {
 	public static final int BRANCH_IFNE = 2;
 	public static final int BRANCH_IFEQ = 3;
 
-	public void addBranch(int pc, int branchType, int targetpc) {
+	public void addBranch(int pc, int branchType, int targetPc) {
+		int type;
 		switch (branchType) {
 			default:
 			case BRANCH_GOTO:
-				branches[pc] = new GOTO(null);
+				type = GOTO;
 				break;
 			case BRANCH_IFNE:
-				branches[pc] = new IFNE(null);
+				type = IFNE;
 				break;
 			case BRANCH_IFEQ:
-				branches[pc] = new IFEQ(null);
+				type = IFEQ;
 				break;
 		}
-		targets[pc] = targetpc;
-		append(branches[pc]);
+		targets[pc] = targetPc;
+
+		// TODO: FIX THIS
+		main.visitJumpInsn(type, null);
+		branches[pc] = null;
 	}
 
 
 	private void increment() {
+		// TODO: Can we do this with labels?
 		++pc;
 		if(beginningOfLuaInstruction < 0) {
 			beginningOfLuaInstruction = pc;
@@ -868,10 +906,12 @@ public class JavaBuilder {
 		for (int pc = 0; pc < nc; pc++) {
 			if (branches[pc] != null) {
 				int t = targets[pc];
-				while (t < branchDestHandles.length && branchDestHandles[t] == null)
+				while (t < branchDestHandles.length && branchDestHandles[t] == null) {
 					t++;
-				if (t >= branchDestHandles.length)
+				}
+				if (t >= branchDestHandles.length) {
 					throw new IllegalArgumentException("no target at or after " + targets[pc] + " op=" + Lua.GET_OPCODE(p.code[targets[pc]]));
+				}
 				branches[pc].setTarget(branchDestHandles[t]);
 			}
 		}
@@ -880,14 +920,14 @@ public class JavaBuilder {
 	public void setlistStack(int pc, int a0, int index0, int nvals) {
 		for (int i = 0; i < nvals; i++) {
 			dup();
-			append(new PUSH(cp, index0 + i));
+			constantOpcode(main, index0 + i); increment();
 			loadLocal(pc, a0 + i);
-			append(factory.createInvoke(STR_LUAVALUE, "rawset", Type.VOID, ARG_TYPES_INT_LUAVALUE, Constants.INVOKEVIRTUAL));
+			METHOD_RAWSET.inject(main);       increment();
 		}
 	}
 
 	public void setlistVarargs(int index0, int vresultbase) {
-		append(new PUSH(cp, index0));
+		constantOpcode(main, index0); increment();
 		loadVarresult();
 		append(factory.createInvoke(STR_LUAVALUE, "rawsetlist", Type.VOID, ARG_TYPES_INT_VARARGS, Constants.INVOKEVIRTUAL));
 	}
