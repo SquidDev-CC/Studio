@@ -42,8 +42,9 @@ import static squidev.ccstudio.core.asm.AsmUtils.constantOpcode;
 
 public class JavaBuilder {
 
-	private static final String TYPE_LOCALUPVALUE = org.objectweb.asm.Type.getInternalName(LuaValue[].class);
-	private static final String TYPE_LUAVALUE = org.objectweb.asm.Type.getInternalName(LuaValue.class);
+	private static final String TYPE_LOCALUPVALUE = org.objectweb.asm.Type.getDescriptor(LuaValue[].class);
+	private static final String TYPE_LUAVALUE = org.objectweb.asm.Type.getDescriptor(LuaValue.class);
+	private static final String CLASS_LUAVALUE = org.objectweb.asm.Type.getInternalName(LuaValue.class);
 
 	protected static class FunctionType {
 		public final String signature;
@@ -186,8 +187,9 @@ public class JavaBuilder {
 	private int pc = 0;
 
 	// the superclass arg count, 0-3 args, 4=varargs
-	private int superclassType;
-	private static int SUPERTYPE_VARARGS = 4;
+	private FunctionType superclass;
+	private static int SUPERTYPE_VARARGS_ID;
+	private static FunctionType SUPERTYPE_VARARGS = SUPER_TYPES[SUPERTYPE_VARARGS_ID];
 
 	// Storage for goto locations
 	private final Label[] branchDestinations;
@@ -197,7 +199,7 @@ public class JavaBuilder {
 		this.pi = pi;
 		this.p = pi.prototype;
 
-		className = className.replaceAll("[^a-zA-Z]+", "_") + "_LuaCompiled";
+		// className = className.replaceAll("[^a-zA-Z]+", "_") + "_LuaCompiled";
 		this.className = className;
 
 		// Create some more functions
@@ -206,9 +208,9 @@ public class JavaBuilder {
 		methodCurrentNewUpvalueValue = new TinyMethod(className, "newupl", "(" + TYPE_LUAVALUE + ")" + TYPE_LOCALUPVALUE, true);
 
 		// what class to inherit from
-		superclassType = p.numparams;
-		if (p.is_vararg != 0 || superclassType >= SUPERTYPE_VARARGS) {
-			superclassType = SUPERTYPE_VARARGS;
+		int superclassType = p.numparams;
+		if (p.is_vararg != 0 || superclassType >= SUPERTYPE_VARARGS_ID) {
+			superclassType = SUPERTYPE_VARARGS_ID;
 		}
 
 		// If we return var args, then must be a var arg function
@@ -216,12 +218,12 @@ public class JavaBuilder {
 			int inst = p.code[i];
 			int o = Lua.GET_OPCODE(inst);
 			if ((o == Lua.OP_TAILCALL) || ((o == Lua.OP_RETURN) && (Lua.GETARG_B(inst) < 1 || Lua.GETARG_B(inst) > 2))) {
-				superclassType = SUPERTYPE_VARARGS;
+				superclassType = SUPERTYPE_VARARGS_ID;
 				break;
 			}
 		}
 
-		FunctionType superType = SUPER_TYPES[superclassType];
+		FunctionType superType = superclass = SUPER_TYPES[superclassType];
 
 		// Create class writer
 		// TODO: Do I need to compute frames?
@@ -264,7 +266,7 @@ public class JavaBuilder {
 		int slot;
 		createUpvalues(-1, 0, p.maxstacksize);
 
-		if (superclassType == SUPERTYPE_VARARGS) {
+		if (superclass == SUPERTYPE_VARARGS) {
 			for (slot = 0; slot < p.numparams; slot++) {
 				if (pi.isInitialValueUsed(slot)) {
 					main.visitVarInsn(ALOAD, 1);
@@ -314,7 +316,7 @@ public class JavaBuilder {
 		// Add default constructor
 		MethodVisitor construct = writer.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
 		construct.visitVarInsn(ALOAD, 0);
-		construct.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+		construct.visitMethodInsn(INVOKESPECIAL, superclass.className, "<init>", "()V", false);
 		construct.visitInsn(RETURN);
 		construct.visitMaxs(1, 1);
 		construct.visitEnd();
@@ -330,8 +332,12 @@ public class JavaBuilder {
 		byte[] bytes = writer.toByteArray();
 		if (Config.verifySources) {
 			ClassReader reader = new ClassReader(bytes);
-			reader.accept(new TraceClassVisitor(new PrintWriter(System.out)), 0);
-			CheckClassAdapter.verify(reader, false, new PrintWriter(System.out));
+			try {
+				CheckClassAdapter.verify(reader, false, new PrintWriter(System.out));
+			} catch(Exception e) {
+				reader.accept(new TraceClassVisitor(new PrintWriter(System.out)), 0);
+				throw e;
+			}
 		}
 		return bytes;
 	}
@@ -580,7 +586,7 @@ public class JavaBuilder {
 		}
 
 		// TODO: More constants, less magic variables
-		main.visitMethodInsn(INVOKEVIRTUAL, TYPE_LUAVALUE, op, "()" + TYPE_LUAVALUE, false);
+		main.visitMethodInsn(INVOKEVIRTUAL, CLASS_LUAVALUE, op, "()" + TYPE_LUAVALUE, false);
 	}
 
 	public void binaryop(int o) {
@@ -608,7 +614,7 @@ public class JavaBuilder {
 				op = "pow";
 				break;
 		}
-		main.visitMethodInsn(INVOKEVIRTUAL, TYPE_LUAVALUE, op, "(" + TYPE_LUAVALUE + ")" + TYPE_LUAVALUE, false);
+		main.visitMethodInsn(INVOKEVIRTUAL, CLASS_LUAVALUE, op, "(" + TYPE_LUAVALUE + ")" + TYPE_LUAVALUE, false);
 	}
 
 	public void compareop(int o) {
@@ -627,12 +633,12 @@ public class JavaBuilder {
 				op = "lteq_b";
 				break;
 		}
-		main.visitMethodInsn(INVOKEVIRTUAL, TYPE_LUAVALUE, op, "(" + TYPE_LUAVALUE + ")z" , false);
+		main.visitMethodInsn(INVOKEVIRTUAL, CLASS_LUAVALUE, op, "(" + TYPE_LUAVALUE + ")Z" , false);
 	}
 
 	public void areturn() {
 		onStartOfLuaInstruction();
-		main.visitInsn(RETURN);
+		main.visitInsn(ARETURN);
 	}
 
 	public void toBoolean() {
@@ -850,7 +856,7 @@ public class JavaBuilder {
 		LuaString ls = value.checkstring();
 		if (ls.isValidUtf8()) {
 			init.visitLdcInsn(value.tojstring());
-			METHOD_VALUEOF_STRING.inject(main);
+			METHOD_VALUEOF_STRING.inject(init);
 		} else {
 			char[] c = new char[ls.m_length];
 			for (int j = 0; j < ls.m_length; j++) {
