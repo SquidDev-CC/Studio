@@ -11,6 +11,7 @@ import squidev.ccstudio.core.Config;
 import squidev.ccstudio.core.testutils.ExpectException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class APIBuilderTest {
 	private static LuaTable table;
@@ -49,8 +50,9 @@ public class APIBuilderTest {
 	 */
 	@Test
 	public void testAnnotation() {
-		assertEquals(table.get("varArgsLuaReturn"), table.get("one"));
-		assertEquals(table.get("varArgsLuaReturn"), table.get("two"));
+		assertTrue(table.get("varArgsLuaReturn").isfunction());
+		assertTrue(table.get("one").isfunction());
+		assertTrue(table.get("two").isfunction());
 
 		assertEquals(table, env.get("embedded"));
 		assertEquals(table, env.get("embed"));

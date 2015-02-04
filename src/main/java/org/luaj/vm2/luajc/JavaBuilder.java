@@ -29,6 +29,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.util.CheckClassAdapter;
+import org.objectweb.asm.util.TraceClassVisitor;
 import squidev.ccstudio.core.Config;
 
 import java.io.PrintWriter;
@@ -57,7 +58,7 @@ public class JavaBuilder {
 
 		public FunctionType(Class classObj, String invokeName, Class... args) {
 			this(
-					org.objectweb.asm.Type.getDescriptor(classObj),
+					org.objectweb.asm.Type.getInternalName(classObj),
 					invokeName, getSignature(classObj, invokeName, args)
 			);
 		}
@@ -65,7 +66,7 @@ public class JavaBuilder {
 		private static String getSignature(Class classObj, String invokeName, Class... args) {
 			try {
 				return org.objectweb.asm.Type.getMethodDescriptor(classObj.getMethod(invokeName, args));
-			} catch(Exception e) { }
+			} catch(Exception ignored) { }
 			return "()V";
 		}
 	}
@@ -195,6 +196,8 @@ public class JavaBuilder {
 	public JavaBuilder(ProtoInfo pi, String className, String filename) {
 		this.pi = pi;
 		this.p = pi.prototype;
+
+		className = className.replaceAll("[^a-zA-Z]+", "_") + "_LuaCompiled";
 		this.className = className;
 
 		// Create some more functions
@@ -222,7 +225,7 @@ public class JavaBuilder {
 
 		// Create class writer
 		// TODO: Do I need to compute frames?
-		writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+		writer = new ClassWriter(ClassWriter.COMPUTE_MAXS/* | ClassWriter.COMPUTE_FRAMES*/);
 
 		// Check the name of the class. We have no interfaces and no generics
 		writer.visit(V1_6, ACC_PUBLIC + ACC_SUPER, className, null, superType.className, null);
@@ -241,7 +244,7 @@ public class JavaBuilder {
 		main = writer.visitMethod(ACC_PUBLIC + ACC_FINAL, superType.methodName, superType.signature, null, null);
 		main.visitCode();
 
-		init = writer.visitMethod(ACC_STATIC, "<clinit>", "V()", null, null);
+		init = writer.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
 		init.visitCode();
 
 		// Initialize the values in the slots
@@ -249,7 +252,6 @@ public class JavaBuilder {
 
 		// initialize branching
 		int nc = p.code.length;
-		targets = new int[nc];
 
 		// Generate a label for every instruction
 		Label[] branchDestinations = this.branchDestinations = new Label[nc];
@@ -327,7 +329,9 @@ public class JavaBuilder {
 		// convert to class bytes
 		byte[] bytes = writer.toByteArray();
 		if (Config.verifySources) {
-			CheckClassAdapter.verify(new ClassReader(bytes), false, new PrintWriter(System.out));
+			ClassReader reader = new ClassReader(bytes);
+			reader.accept(new TraceClassVisitor(new PrintWriter(System.out)), 0);
+			CheckClassAdapter.verify(reader, false, new PrintWriter(System.out));
 		}
 		return bytes;
 	}
@@ -892,7 +896,7 @@ public class JavaBuilder {
 	 * I want to maintain compatability with org.luaj.vm2.luajc.JavaGen so we need to keep it like this.
 	 */
 	private void onStartOfLuaInstruction() {
-		if(currentLabel == null) {
+		if(currentLabel == null && branchDestinations != null) {
 			currentLabel = branchDestinations[pc];
 			// TODO: Optimise this so we only visit needed labels
 			main.visitLabel(currentLabel);
