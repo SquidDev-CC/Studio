@@ -25,18 +25,8 @@ uploadArchives {
 
 sourceSets {
 	main {
-		java {
-			srcDir 'src/main/java'
-		}
-
 		resources {
 			exclude '**/__ignore/*'
-		}
-	}
-
-	test {
-		java {
-			srcDir 'src/test'
 		}
 	}
 }
