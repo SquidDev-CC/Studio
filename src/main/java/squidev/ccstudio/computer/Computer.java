@@ -173,17 +173,17 @@ public class Computer {
 
 						// Every <n> instructions:
 						setHook.invoke(new LuaValue[]{
-								coroutine,
-								new ZeroArgFunction() {
-									@Override
-									public LuaValue call() {
-										// Check if the computer should abort, if so then yield this co-routine
-										if (Computer.this.hardAbort != null) {
-											LuaThread.yield(LuaValue.NONE);
-										}
-										return LuaValue.NONE;
+							coroutine,
+							new ZeroArgFunction() {
+								@Override
+								public LuaValue call() {
+									// Check if the computer should abort, if so then yield this co-routine
+									if (Computer.this.hardAbort != null) {
+										LuaThread.yield(LuaValue.NONE);
 									}
-								}, LuaValue.NIL, LuaValue.valueOf(config.coroutineHookCount)
+									return LuaValue.NONE;
+								}
+							}, LuaValue.NIL, LuaValue.valueOf(config.coroutineHookCount)
 						});
 
 						return coroutine;
@@ -413,8 +413,8 @@ public class Computer {
 		if (rootMount == null) {
 			try {
 				rootMount = new FileMount(
-						new File(config.computerDirectory, Integer.toString(environment.id)),
-						config.computerSpaceLimit
+					new File(config.computerDirectory, Integer.toString(environment.id)),
+					config.computerSpaceLimit
 				);
 			} catch (Exception ignored) {
 			}

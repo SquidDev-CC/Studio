@@ -100,9 +100,9 @@ public class APIBuilder {
 	void write() {
 		// Declare class name
 		writer.visit(
-				V1_6, ACC_PUBLIC + ACC_SUPER, className, // Public, and
-				"L" + PARENT_NAME + "<" + originalWhole + ">;", // Generic
-				PARENT_NAME, null
+			V1_6, ACC_PUBLIC + ACC_SUPER, className, // Public, and
+			"L" + PARENT_NAME + "<" + originalWhole + ">;", // Generic
+			PARENT_NAME, null
 		);
 
 		// Declare METHOD_NAMES

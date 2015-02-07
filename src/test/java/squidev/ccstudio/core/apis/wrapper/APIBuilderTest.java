@@ -64,14 +64,14 @@ public class APIBuilderTest {
 	@Test
 	public void testErrors() {
 		ExpectException.expect(LuaError.class, "Expected number, number",
-				() -> table.get("twoArgsOneReturn").invoke(LuaValue.valueOf(true), LuaValue.valueOf(1)),
-				() -> table.get("twoArgsOneReturn").invoke(LuaValue.valueOf("HELLO"), LuaValue.valueOf(1)),
-				() -> table.get("twoArgsOneReturn").invoke(LuaValue.valueOf(1), LuaValue.valueOf(1.12)),
-				() -> table.get("twoArgsOneReturn").invoke(LuaValue.valueOf(1))
+			() -> table.get("twoArgsOneReturn").invoke(LuaValue.valueOf(true), LuaValue.valueOf(1)),
+			() -> table.get("twoArgsOneReturn").invoke(LuaValue.valueOf("HELLO"), LuaValue.valueOf(1)),
+			() -> table.get("twoArgsOneReturn").invoke(LuaValue.valueOf(1), LuaValue.valueOf(1.12)),
+			() -> table.get("twoArgsOneReturn").invoke(LuaValue.valueOf(1))
 		);
 
 		ExpectException.expect(LuaError.class, "I expected better of you!",
-				() -> table.get("testingError").invoke(LuaValue.valueOf(true), LuaValue.valueOf(1))
+			() -> table.get("testingError").invoke(LuaValue.valueOf(true), LuaValue.valueOf(1))
 		);
 	}
 
