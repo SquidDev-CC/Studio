@@ -254,21 +254,33 @@ public class JavaBuilder {
 		// Initialize the values in the slots
 		initializeSlots();
 
-		// Generate a label for every instruction
-		int nc = p.code.length;
-		int[] lines = p.lineinfo;
-		int previousLine = -1;
-		Label[] branchDestinations = this.branchDestinations = new Label[nc];
-		for (int pc = 0; pc < nc; pc++) {
-			Label currentLabel = new Label();
-			branchDestinations[pc] = currentLabel;
+		{
+			// Generate a label for every instruction
+			int nc = p.code.length;
+			int[] lines = p.lineinfo;
+			int previousLine = -1;
+			Label[] branchDestinations = this.branchDestinations = new Label[nc];
+			for (int pc = 0; pc < nc; pc++) {
+				Label currentLabel = new Label();
+				branchDestinations[pc] = currentLabel;
 
-			int currentLine = lines[pc];
+				int currentLine = lines[pc];
 
-			if (currentLine != previousLine) {
-				main.visitLineNumber(currentLine, currentLabel);
-				previousLine = currentLine;
+				if (currentLine != previousLine) {
+					main.visitLineNumber(currentLine, currentLabel);
+					previousLine = currentLine;
+				}
 			}
+		}
+
+		{
+			// Add default constructor
+			MethodVisitor construct = writer.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+			construct.visitVarInsn(ALOAD, 0);
+			construct.visitMethodInsn(INVOKESPECIAL, superclass.className, "<init>", "()V", false);
+			construct.visitInsn(RETURN);
+			construct.visitMaxs(1, 1);
+			construct.visitEnd();
 		}
 	}
 
@@ -318,19 +330,12 @@ public class JavaBuilder {
 	}
 
 	public byte[] completeClass() {
-		// Add class initializer
+		// Finish class initializer
 		init.visitInsn(RETURN);
 		init.visitMaxs(0, 0);
 		init.visitEnd();
 
-		// Add default constructor
-		MethodVisitor construct = writer.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-		construct.visitVarInsn(ALOAD, 0);
-		construct.visitMethodInsn(INVOKESPECIAL, superclass.className, "<init>", "()V", false);
-		construct.visitInsn(RETURN);
-		construct.visitMaxs(1, 1);
-		construct.visitEnd();
-
+		// Finish main function
 		main.visitMaxs(0, 0);
 		main.visitEnd();
 
