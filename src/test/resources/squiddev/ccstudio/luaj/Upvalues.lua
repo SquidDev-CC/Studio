@@ -12,4 +12,4 @@ increase()
 assertEquals(1, a)
 
 increase()
-assertEquals(1, a)
+assertEquals(2, a)

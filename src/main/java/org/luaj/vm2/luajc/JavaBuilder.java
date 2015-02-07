@@ -44,6 +44,8 @@ public class JavaBuilder {
 	private static final String TYPE_LUAVALUE = Type.getDescriptor(LuaValue.class);
 	private static final String CLASS_LUAVALUE = Type.getInternalName(LuaValue.class);
 
+	private static final String[] INTERFACES = {Type.getInternalName(IGetSource.class)};
+
 	protected static class FunctionType {
 		public final String signature;
 		public final String methodName;
@@ -197,6 +199,9 @@ public class JavaBuilder {
 	private final Label[] branchDestinations;
 	private Label currentLabel = null;
 
+	// Storage for line numbers
+	private int previousLine = -1;
+
 	public JavaBuilder(ProtoInfo pi, String className, String filename) {
 		this.pi = pi;
 		this.p = pi.prototype;
@@ -232,7 +237,7 @@ public class JavaBuilder {
 		writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
 		// Check the name of the class. We have no interfaces and no generics
-		writer.visit(V1_6, ACC_PUBLIC + ACC_SUPER, className, null, superType.className, null);
+		writer.visit(V1_6, ACC_PUBLIC + ACC_SUPER, className, null, superType.className, INTERFACES);
 
 		// Write the filename
 		writer.visitSource(filename, null);
@@ -254,21 +259,43 @@ public class JavaBuilder {
 		// Initialize the values in the slots
 		initializeSlots();
 
-		// Generate a label for every instruction
-		int nc = p.code.length;
-		int[] lines = p.lineinfo;
-		int previousLine = -1;
-		Label[] branchDestinations = this.branchDestinations = new Label[nc];
-		for (int pc = 0; pc < nc; pc++) {
-			Label currentLabel = new Label();
-			branchDestinations[pc] = currentLabel;
-
-			int currentLine = lines[pc];
-
-			if (currentLine != previousLine) {
-				main.visitLineNumber(currentLine, currentLabel);
-				previousLine = currentLine;
+		{
+			// Generate a label for every instruction
+			int nc = p.code.length;
+			Label[] branchDestinations = this.branchDestinations = new Label[nc];
+			for (int pc = 0; pc < nc; pc++) {
+				branchDestinations[pc] = new Label();
 			}
+		}
+
+		{
+			// Add default constructor
+			MethodVisitor construct = writer.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+			construct.visitVarInsn(ALOAD, 0);
+			construct.visitMethodInsn(INVOKESPECIAL, superclass.className, "<init>", "()V", false);
+			construct.visitInsn(RETURN);
+			construct.visitMaxs(1, 1);
+			construct.visitEnd();
+		}
+
+		{
+			// Add get source
+			MethodVisitor source = writer.visitMethod(ACC_PUBLIC, "getSource", "()Ljava/lang/String;", null, null);
+			source.visitLdcInsn(filename);
+			source.visitInsn(ARETURN);
+			source.visitMaxs(0, 0);
+			source.visitEnd();
+
+			// Add current line field
+			writer.visitField(0, "line", "I", null, -1).visitEnd();
+
+			// Add get line
+			source = writer.visitMethod(ACC_PUBLIC, "getLine", "()I", null, null);
+			source.visitVarInsn(ALOAD, 0);
+			source.visitFieldInsn(GETFIELD, className, "line", "I");
+			source.visitInsn(IRETURN);
+			source.visitMaxs(0, 0);
+			source.visitEnd();
 		}
 	}
 
@@ -318,19 +345,12 @@ public class JavaBuilder {
 	}
 
 	public byte[] completeClass() {
-		// Add class initializer
+		// Finish class initializer
 		init.visitInsn(RETURN);
 		init.visitMaxs(0, 0);
 		init.visitEnd();
 
-		// Add default constructor
-		MethodVisitor construct = writer.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-		construct.visitVarInsn(ALOAD, 0);
-		construct.visitMethodInsn(INVOKESPECIAL, superclass.className, "<init>", "()V", false);
-		construct.visitInsn(RETURN);
-		construct.visitMaxs(1, 1);
-		construct.visitEnd();
-
+		// Finish main function
 		main.visitMaxs(0, 0);
 		main.visitEnd();
 
@@ -906,8 +926,19 @@ public class JavaBuilder {
 	private void onStartOfLuaInstruction() {
 		if (currentLabel == null && branchDestinations != null) {
 			currentLabel = branchDestinations[pc];
-			// TODO: Optimise this so we only visit needed labels
+
 			main.visitLabel(currentLabel);
+
+			// TODO: Fix this so it is less broken
+			int currentLine = p.lineinfo[pc];
+
+			if (currentLine != previousLine) {
+				main.visitLineNumber(currentLine, currentLabel);
+				main.visitVarInsn(ALOAD, 0);
+				constantOpcode(main, currentLine);
+				main.visitFieldInsn(PUTFIELD, className, "line", "I");
+				previousLine = currentLine;
+			}
 		}
 	}
 

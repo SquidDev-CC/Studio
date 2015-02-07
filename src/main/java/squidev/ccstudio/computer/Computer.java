@@ -318,7 +318,7 @@ public class Computer {
 	 */
 	public void resume(Varargs args) {
 		try {
-			Varargs result = coroutineResume.invoke(args);
+			Varargs result = coroutineResume.invoke(LuaThread.getRunning(), args);
 
 			// If we have some sort of error message, stop everything
 			if (hardAbort != null) throw new LuaError(hardAbort);

@@ -30,6 +30,7 @@ public class JavaBuilderTest {
 			{"Function"},
 			{"Upvalues"},
 			{"Recursive"},
+			{"Error"}
 		};
 
 		return Arrays.asList(tests);
@@ -51,7 +52,7 @@ public class JavaBuilderTest {
 	 */
 	@Test
 	public void runLua() throws Exception {
-		LoadState.load(getClass().getResourceAsStream("/squiddev/ccstudio/luaj/" + name + ".lua"), "test-" + name, globals).invoke();
+		LoadState.load(getClass().getResourceAsStream("/squiddev/ccstudio/luaj/" + name + ".lua"), name + ".lua", globals).invoke();
 	}
 
 	class AssertFunction extends ThreeArgFunction {
@@ -63,7 +64,7 @@ public class JavaBuilderTest {
 			}
 
 			assertEquals(msg, expected.typename(), actual.typename());
-			assertEquals(msg, expected.tojstring(), expected.tojstring());
+			assertEquals(msg, expected.tojstring(), actual.tojstring());
 
 			return LuaValue.NONE;
 		}
