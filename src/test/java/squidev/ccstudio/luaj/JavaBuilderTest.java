@@ -28,6 +28,8 @@ public class JavaBuilderTest {
 			{"WhileLoop"},
 			{"DoBlock"},
 			{"Function"},
+			{"Upvalues"},
+			{"Recursive"},
 		};
 
 		return Arrays.asList(tests);
