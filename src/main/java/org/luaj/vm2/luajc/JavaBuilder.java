@@ -89,7 +89,7 @@ public class JavaBuilder {
 	private static final TinyMethod METHOD_TABLEOF = TinyMethod.tryConstruct(LuaValue.class, "tableOf", Varargs.class, int.class);
 	private static final TinyMethod METHOD_TABLEOF_DIMS = TinyMethod.tryConstruct(LuaValue.class, "tableOf", int.class, int.class);
 	private static final TinyMethod METHOD_TABLE_GET = TinyMethod.tryConstruct(LuaValue.class, "get", LuaValue.class);
-	private static final TinyMethod METHOD_TABLE_SET = TinyMethod.tryConstruct(LuaValue.class, "set", LuaValue.class);
+	private static final TinyMethod METHOD_TABLE_SET = TinyMethod.tryConstruct(LuaValue.class, "set", LuaValue.class, LuaValue.class);
 
 	// Strings
 	private static final TinyMethod METHOD_STRING_CONCAT = TinyMethod.tryConstruct(LuaValue.class, "concat", LuaValue.class);
@@ -142,7 +142,7 @@ public class JavaBuilder {
 	private static final TinyMethod METHOD_SETENV = TinyMethod.tryConstruct(LuaValue.class, "setfenv", LuaValue.class);
 	private static final TinyMethod METHOD_TO_CHARARRAY = TinyMethod.tryConstruct(String.class, "toCharArray");
 	private static final TinyMethod METHOD_RAWSET = TinyMethod.tryConstruct(LuaValue.class, "rawset", int.class, LuaValue.class);
-	private static final TinyMethod METHOD_RAWSET_LIST = TinyMethod.tryConstruct(LuaValue.class, "rawsetlist", int.class, LuaValue.class);
+	private static final TinyMethod METHOD_RAWSET_LIST = TinyMethod.tryConstruct(LuaValue.class, "rawsetlist", int.class, Varargs.class);
 
 	// TODO: Can this be LibFunction? Is there a performance change?
 	private final TinyMethod methodCurrentNewUpvalueEmpty;
@@ -287,7 +287,7 @@ public class JavaBuilder {
 			source.visitEnd();
 
 			// Add current line field
-			writer.visitField(0, "line", "I", null, -1).visitEnd();
+			writer.visitField(0, "line", "I", null, p.linedefined).visitEnd();
 
 			// Add get line
 			source = writer.visitMethod(ACC_PUBLIC, "getLine", "()I", null, null);

@@ -58,6 +58,10 @@ public class DumpInstructions {
 		writer.flush();
 	}
 
+	public static void dump(Prototype proto) {
+		dump(proto, new PrintWriter(System.out));
+	}
+
 	static {
 		HashMap<Integer, String> ops = new HashMap<>();
 		opcodes = ops;
@@ -71,5 +75,9 @@ public class DumpInstructions {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	public static String getOpcode(int instruction) {
+		return opcodes.get(Lua.GET_OPCODE(instruction));
 	}
 }

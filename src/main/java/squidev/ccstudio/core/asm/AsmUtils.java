@@ -76,7 +76,11 @@ public class AsmUtils {
 		StringWriter writer = new StringWriter();
 		PrintWriter printWriter = new PrintWriter(writer);
 
-		CheckClassAdapter.verify(reader, false, printWriter);
+		try {
+			CheckClassAdapter.verify(reader, false, printWriter);
+		} catch (Exception e) {
+			e.printStackTrace(printWriter);
+		}
 
 		String contents = writer.toString();
 		// TODO: Override so this works. We need to ignore ClassNotFound as we don't load subclasses
@@ -125,7 +129,7 @@ public class AsmUtils {
 			try {
 				return new TinyMethod(classObj.getMethod(methodName, args));
 			} catch (NoSuchMethodException e) {
-				return null;
+				throw new IllegalArgumentException(e);
 			}
 		}
 
