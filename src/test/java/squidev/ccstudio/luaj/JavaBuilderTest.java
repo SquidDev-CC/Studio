@@ -64,7 +64,7 @@ public class JavaBuilderTest {
 			}
 
 			assertEquals(msg, expected.typename(), actual.typename());
-			assertEquals(msg, expected.tojstring(), expected.tojstring());
+			assertEquals(msg, expected.tojstring(), actual.tojstring());
 
 			return LuaValue.NONE;
 		}

@@ -22,6 +22,7 @@
 package org.luaj.vm2.lib;
 
 import org.luaj.vm2.*;
+import org.luaj.vm2.luajc.IGetSource;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code debug}
@@ -31,11 +32,11 @@ import org.luaj.vm2.*;
  * To do this, it must maintain a separate stack of calls to {@link LuaClosure} and {@link LibFunction}
  * instances.
  * Especially when lua-to-java bytecode compiling is being used
- * via a {@link LuaCompiler} such as {@link LuaJC},
+ * via a {@link org.luaj.vm2.LoadState.LuaCompiler} such as {@link org.luaj.vm2.luajc.LuaJC},
  * this cannot be done in all cases.
  * <p>
  * Typically, this library is included as part of a call to either
- * {@link JsePlatform#debugGlobals()} or {@link JmePlatform#debugGlobals()}
+ * {@link org.luaj.vm2.lib.jse.JsePlatform#debugGlobals()} or JmePlatform#debugGlobals()
  * <p>
  * To instantiate and use it directly,
  * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
@@ -48,8 +49,7 @@ import org.luaj.vm2.*;
  * <p>
  *
  * @see LibFunction
- * @see JsePlatform
- * @see JmePlatform
+ * @see org.luaj.vm2.lib.jse.JsePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.9">http://www.lua.org/manual/5.1/manual.html#5.9</a>
  */
 public class DebugLib extends VarArgFunction {
@@ -182,6 +182,7 @@ public class DebugLib extends VarArgFunction {
 	static class DebugInfo {
 		LuaValue func;
 		LuaClosure closure;
+		IGetSource getSource;
 		LuaValue[] stack;
 		Varargs varargs, extras;
 		int pc, top;
@@ -203,6 +204,7 @@ public class DebugLib extends VarArgFunction {
 		void setfunction(LuaValue func) {
 			this.func = func;
 			this.closure = (func instanceof LuaClosure ? (LuaClosure) func : null);
+			this.getSource = (func instanceof IGetSource ? (IGetSource) func : null);
 		}
 
 		void clear() {
@@ -232,7 +234,12 @@ public class DebugLib extends VarArgFunction {
 		}
 
 		public String sourceline() {
-			if (closure == null) return func.tojstring();
+			if (closure == null) {
+				if (getSource != null) {
+					return getSource.getSource() + ":" + getSource.getLine();
+				}
+				return func.tojstring();
+			}
 			String s = closure.p.source.tojstring();
 			int line = currentline();
 			return (s.startsWith("@") || s.startsWith("=") ? s.substring(1) : s) + ":" + line;
@@ -242,8 +249,9 @@ public class DebugLib extends VarArgFunction {
 			// if ( func != null )
 			// 	return func.tojstring();
 			LuaString[] kind = getfunckind();
-			if (kind == null)
+			if (kind == null) {
 				return "function ?";
+			}
 			return "function " + kind[0].tojstring();
 		}
 
