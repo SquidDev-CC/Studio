@@ -108,3 +108,4 @@ docs/
 /luaj/lib
 /target
 /build
+!gradle-wrapper.jar

@@ -24,15 +24,13 @@ package org.luaj.vm2.luajc;
 
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.*;
-import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.util.CheckClassAdapter;
-import org.objectweb.asm.util.TraceClassVisitor;
+import org.objectweb.asm.Type;
 import squidev.ccstudio.core.Config;
+import squidev.ccstudio.core.asm.AsmUtils;
 
-import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,43 +40,47 @@ import static squidev.ccstudio.core.asm.AsmUtils.constantOpcode;
 
 public class JavaBuilder {
 
-	private static final String TYPE_LOCALUPVALUE = org.objectweb.asm.Type.getDescriptor(LuaValue[].class);
-	private static final String TYPE_LUAVALUE = org.objectweb.asm.Type.getDescriptor(LuaValue.class);
-	private static final String CLASS_LUAVALUE = org.objectweb.asm.Type.getInternalName(LuaValue.class);
+	private static final String TYPE_LOCALUPVALUE = Type.getDescriptor(LuaValue[].class);
+	private static final String TYPE_LUAVALUE = Type.getDescriptor(LuaValue.class);
+	private static final String CLASS_LUAVALUE = Type.getInternalName(LuaValue.class);
 
 	protected static class FunctionType {
 		public final String signature;
 		public final String methodName;
 		public final String className;
+		public final int argsLength;
 
-		public FunctionType(String name, String invokeName, String invokeSignature) {
+		public FunctionType(String name, String invokeName, String invokeSignature, int args) {
 			className = name;
 			methodName = invokeName;
 			signature = invokeSignature;
+			argsLength = args;
 		}
 
 		public FunctionType(Class classObj, String invokeName, Class... args) {
 			this(
-					org.objectweb.asm.Type.getInternalName(classObj),
-					invokeName, getSignature(classObj, invokeName, args)
+				Type.getInternalName(classObj),
+				invokeName, getSignature(classObj, invokeName, args),
+				args.length
 			);
 		}
 
 		private static String getSignature(Class classObj, String invokeName, Class... args) {
 			try {
-				return org.objectweb.asm.Type.getMethodDescriptor(classObj.getMethod(invokeName, args));
-			} catch(Exception ignored) { }
+				return Type.getMethodDescriptor(classObj.getMethod(invokeName, args));
+			} catch (Exception ignored) {
+			}
 			return "()V";
 		}
 	}
 
 	// Manage super classes
 	private static FunctionType[] SUPER_TYPES = {
-			new FunctionType(ZeroArgFunction.class, "call"),
-			new FunctionType(OneArgFunction.class, "call", LuaValue.class),
-			new FunctionType(TwoArgFunction.class, "call", LuaValue.class, LuaValue.class),
-			new FunctionType(ThreeArgFunction.class, "call", LuaValue.class, LuaValue.class, LuaValue.class),
-			new FunctionType(VarArgFunction.class, "onInvoke", Varargs.class),
+		new FunctionType(ZeroArgFunction.class, "call"),
+		new FunctionType(OneArgFunction.class, "call", LuaValue.class),
+		new FunctionType(TwoArgFunction.class, "call", LuaValue.class, LuaValue.class),
+		new FunctionType(ThreeArgFunction.class, "call", LuaValue.class, LuaValue.class, LuaValue.class),
+		new FunctionType(VarArgFunction.class, "onInvoke", Varargs.class),
 	};
 
 	// Table functions
@@ -124,8 +126,8 @@ public class JavaBuilder {
 
 	// Invoke (because that is different to call?) Well, it is but really silly
 	private static final TinyMethod METHOD_INVOKE_VAR = TinyMethod.tryConstruct(LuaValue.class, "invoke", Varargs.class);
-	private static final TinyMethod METHOD_INVOKE_TWO = TinyMethod.tryConstruct(LuaValue.class, "invoke");
-	private static final TinyMethod METHOD_INVOKE_NONE = TinyMethod.tryConstruct(LuaValue.class, "invoke", LuaValue.class, Varargs.class);
+	private static final TinyMethod METHOD_INVOKE_NONE = TinyMethod.tryConstruct(LuaValue.class, "invoke");
+	private static final TinyMethod METHOD_INVOKE_TWO = TinyMethod.tryConstruct(LuaValue.class, "invoke", LuaValue.class, Varargs.class);
 	private static final TinyMethod METHOD_INVOKE_THREE = TinyMethod.tryConstruct(LuaValue.class, "invoke", LuaValue.class, LuaValue.class, Varargs.class);
 
 	// ValueOf
@@ -174,7 +176,7 @@ public class JavaBuilder {
 	/**
 	 * Max number of locals
 	 */
-	private int maxLocals = 0;
+	private int maxLocals;
 
 	/**
 	 * The local index of the varargs result
@@ -188,7 +190,7 @@ public class JavaBuilder {
 
 	// the superclass arg count, 0-3 args, 4=varargs
 	private FunctionType superclass;
-	private static int SUPERTYPE_VARARGS_ID;
+	private static int SUPERTYPE_VARARGS_ID = 4;
 	private static FunctionType SUPERTYPE_VARARGS = SUPER_TYPES[SUPERTYPE_VARARGS_ID];
 
 	// Storage for goto locations
@@ -199,7 +201,6 @@ public class JavaBuilder {
 		this.pi = pi;
 		this.p = pi.prototype;
 
-		// className = className.replaceAll("[^a-zA-Z]+", "_") + "_LuaCompiled";
 		this.className = className;
 
 		// Create some more functions
@@ -224,10 +225,11 @@ public class JavaBuilder {
 		}
 
 		FunctionType superType = superclass = SUPER_TYPES[superclassType];
+		maxLocals = superType.argsLength;
 
 		// Create class writer
 		// TODO: Do I need to compute frames?
-		writer = new ClassWriter(ClassWriter.COMPUTE_MAXS/* | ClassWriter.COMPUTE_FRAMES*/);
+		writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
 		// Check the name of the class. We have no interfaces and no generics
 		writer.visit(V1_6, ACC_PUBLIC + ACC_SUPER, className, null, superType.className, null);
@@ -252,13 +254,21 @@ public class JavaBuilder {
 		// Initialize the values in the slots
 		initializeSlots();
 
-		// initialize branching
-		int nc = p.code.length;
-
 		// Generate a label for every instruction
+		int nc = p.code.length;
+		int[] lines = p.lineinfo;
+		int previousLine = -1;
 		Label[] branchDestinations = this.branchDestinations = new Label[nc];
-		for(int i = 0; i < nc; i++) {
-			branchDestinations[i] = new Label();
+		for (int pc = 0; pc < nc; pc++) {
+			Label currentLabel = new Label();
+			branchDestinations[pc] = currentLabel;
+
+			int currentLine = lines[pc];
+
+			if (currentLine != previousLine) {
+				main.visitLineNumber(currentLine, currentLabel);
+				previousLine = currentLine;
+			}
 		}
 	}
 
@@ -321,8 +331,6 @@ public class JavaBuilder {
 		construct.visitMaxs(1, 1);
 		construct.visitEnd();
 
-		// Gen method
-		resolveBranches();
 		main.visitMaxs(0, 0);
 		main.visitEnd();
 
@@ -331,13 +339,7 @@ public class JavaBuilder {
 		// convert to class bytes
 		byte[] bytes = writer.toByteArray();
 		if (Config.verifySources) {
-			ClassReader reader = new ClassReader(bytes);
-			try {
-				CheckClassAdapter.verify(reader, false, new PrintWriter(System.out));
-			} catch(Exception e) {
-				reader.accept(new TraceClassVisitor(new PrintWriter(System.out)), 0);
-				throw e;
-			}
+			AsmUtils.validateClass(bytes);
 		}
 		return bytes;
 	}
@@ -387,8 +389,8 @@ public class JavaBuilder {
 
 	private int findSlotIndex(int slot, boolean isUpvalue) {
 		return isUpvalue ?
-				findSlot(slot, upvalueSlotVars, PREFIX_UPVALUE_SLOT) :
-				findSlot(slot, plainSlotVars, PREFIX_PLAIN_SLOT);
+			findSlot(slot, upvalueSlotVars, PREFIX_UPVALUE_SLOT) :
+			findSlot(slot, plainSlotVars, PREFIX_PLAIN_SLOT);
 	}
 
 	public void loadLocal(int pc, int slot) {
@@ -633,7 +635,7 @@ public class JavaBuilder {
 				op = "lteq_b";
 				break;
 		}
-		main.visitMethodInsn(INVOKEVIRTUAL, CLASS_LUAVALUE, op, "(" + TYPE_LUAVALUE + ")Z" , false);
+		main.visitMethodInsn(INVOKEVIRTUAL, CLASS_LUAVALUE, op, "(" + TYPE_LUAVALUE + ")Z", false);
 	}
 
 	public void areturn() {
@@ -665,7 +667,7 @@ public class JavaBuilder {
 		onStartOfLuaInstruction();
 
 		constantOpcode(main, nargs);
-		main.visitTypeInsn(ANEWARRAY, TYPE_LUAVALUE);
+		main.visitTypeInsn(ANEWARRAY, CLASS_LUAVALUE);
 		for (int i = 0; i < nargs; i++) {
 			main.visitInsn(DUP);
 			constantOpcode(main, i);
@@ -767,7 +769,7 @@ public class JavaBuilder {
 
 		main.visitTypeInsn(NEW, protoname);
 		main.visitInsn(DUP);
-		main.visitMethodInsn(INVOKESPECIAL, "<init>", protoname, "()V", false);
+		main.visitMethodInsn(INVOKESPECIAL, protoname, "<init>", "()V", false);
 		main.visitInsn(DUP);
 		loadEnv();
 		METHOD_SETENV.inject(main);
@@ -817,10 +819,10 @@ public class JavaBuilder {
 				String name = constants.get(value);
 				if (name == null) {
 					name = value.type() == LuaValue.TNUMBER ?
-							value.isinttype() ?
-									createLuaIntegerField(value.checkint()) :
-									createLuaDoubleField(value.checkdouble()) :
-							createLuaStringField(value.checkstring());
+						value.isinttype() ?
+							createLuaIntegerField(value.checkint()) :
+							createLuaDoubleField(value.checkdouble()) :
+						createLuaStringField(value.checkstring());
 					constants.put(value, name);
 				}
 				main.visitFieldInsn(GETSTATIC, className, name, TYPE_LUAVALUE);
@@ -902,7 +904,7 @@ public class JavaBuilder {
 	 * I want to maintain compatability with org.luaj.vm2.luajc.JavaGen so we need to keep it like this.
 	 */
 	private void onStartOfLuaInstruction() {
-		if(currentLabel == null && branchDestinations != null) {
+		if (currentLabel == null && branchDestinations != null) {
 			currentLabel = branchDestinations[pc];
 			// TODO: Optimise this so we only visit needed labels
 			main.visitLabel(currentLabel);
@@ -914,27 +916,10 @@ public class JavaBuilder {
 		currentLabel = null;
 	}
 
-	private void resolveBranches() {
-		/*
-		int nc = p.code.length;
-		for (int pc = 0; pc < nc; pc++) {
-			if (branches[pc] != null) {
-				int t = targets[pc];
-				while (t < branchDestinations.length && branchDestinations[t] == null) {
-					t++;
-				}
-				if (t >= branchDestinations.length) {
-					throw new IllegalArgumentException("no target at or after " + targets[pc] + " op=" + Lua.GET_OPCODE(p.code[targets[pc]]));
-				}
-				branches[pc].setTarget(branchDestinations[t]);
-			}
-		}*/
-	}
-
 	public void setlistStack(int pc, int a0, int index0, int nvals) {
 		onStartOfLuaInstruction();
 		for (int i = 0; i < nvals; i++) {
-			dup();
+			main.visitInsn(DUP);
 			constantOpcode(main, index0 + i);
 			loadLocal(pc, a0 + i);
 			METHOD_RAWSET.inject(main);

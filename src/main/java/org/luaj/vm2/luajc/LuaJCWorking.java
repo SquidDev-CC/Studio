@@ -41,7 +41,7 @@ public class LuaJCWorking implements LoadState.LuaCompiler {
 	protected static LuaJCWorking instance;
 
 	public static LuaJCWorking getInstance() {
-		if ( instance == null ) instance = new LuaJCWorking();
+		if (instance == null) instance = new LuaJCWorking();
 		return instance;
 	}
 
@@ -51,10 +51,6 @@ public class LuaJCWorking implements LoadState.LuaCompiler {
 	public static void install() {
 		LoadState.compiler = getInstance();
 	}
-
-	public LuaJCWorking() {
-	}
-
 
 	public LuaFunction load(InputStream stream, String name, LuaValue env) throws IOException {
 		Prototype p = LuaC.compile(stream, name);
@@ -66,20 +62,20 @@ public class LuaJCWorking implements LoadState.LuaCompiler {
 	}
 
 	private static String toStandardJavaClassName(String chunkName) {
-		String stub = toStub( chunkName );
-		String className = stub.replace('/','.').replaceAll(NON_IDENTIFIER, "_");
+		String stub = toStub(chunkName);
+		String className = stub.replace('/', '.').replaceAll(NON_IDENTIFIER, "_");
 
 		int c = className.charAt(0);
-		if ( c!='_' && !Character.isJavaIdentifierStart(c) ) className = "_"+className;
+		if (c != '_' && !Character.isJavaIdentifierStart(c)) className = "_" + className;
 
 		return className + "_LuaCompiled";
 	}
 
-	private static String toStandardLuaFileName( String chunnkName ) {
-		return toStub(chunnkName).replace('.','/')+".lua";
+	private static String toStandardLuaFileName(String chunnkName) {
+		return toStub(chunnkName).replace('.', '/') + ".lua";
 	}
 
-	private static String toStub( String s ) {
-		return s.endsWith(".lua") ? s.substring(0,s.length()-4) : s;
+	private static String toStub(String s) {
+		return s.endsWith(".lua") ? s.substring(0, s.length() - 4) : s;
 	}
 }

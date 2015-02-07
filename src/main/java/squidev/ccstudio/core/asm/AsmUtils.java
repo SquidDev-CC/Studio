@@ -1,8 +1,14 @@
 package squidev.ccstudio.core.asm;
 
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.util.CheckClassAdapter;
+import org.objectweb.asm.util.TraceClassVisitor;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
@@ -31,19 +37,19 @@ public class AsmUtils {
 	public static void constantOpcode(MethodVisitor mv, int number) {
 		if (number >= -1 && number <= 5) {
 			mv.visitInsn(getConstOpcode(number));
-		} else if(number >= -128 && number <= 127) {
+		} else if (number >= -128 && number <= 127) {
 			mv.visitIntInsn(BIPUSH, number);
-		} else if(number >= -32768 && number <= 32767) {
-			mv.visitIntInsn(SIPUSH, (short)number);
+		} else if (number >= -32768 && number <= 32767) {
+			mv.visitIntInsn(SIPUSH, (short) number);
 		} else {
 			mv.visitLdcInsn(number);
 		}
 	}
 
 	public static void constantOpcode(MethodVisitor mv, double number) {
-		if(number == 0.0D) {
+		if (number == 0.0D) {
 			mv.visitInsn(DCONST_0);
-		} else if(number == 1.0D) {
+		} else if (number == 1.0D) {
 			mv.visitInsn(DCONST_1);
 		} else {
 			mv.visitLdcInsn(number);
@@ -64,6 +70,30 @@ public class AsmUtils {
 		} catch (NoSuchMethodException e) {
 			return null;
 		}
+	}
+
+	public static void validateClass(ClassReader reader) {
+		StringWriter writer = new StringWriter();
+		PrintWriter printWriter = new PrintWriter(writer);
+
+		CheckClassAdapter.verify(reader, false, printWriter);
+
+		String contents = writer.toString();
+		// TODO: Override so this works. We need to ignore ClassNotFound as we don't load subclasses
+		if (contents.length() > 0 && !contents.contains("java.lang.ClassNotFoundException: ")) {
+			reader.accept(new TraceClassVisitor(printWriter), 0);
+			System.out.println("Dump for " + reader.getClassName());
+			System.out.println(writer);
+			throw new RuntimeException("Generation error");
+		}
+	}
+
+	public static void validateClass(byte[] bytes) {
+		validateClass(new ClassReader(bytes));
+	}
+
+	public static void validateClass(ClassWriter writer) {
+		validateClass(writer.toByteArray());
 	}
 
 	/**
