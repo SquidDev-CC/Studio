@@ -1,4 +1,4 @@
-package org.luaj.vm2.luajc;
+package squidev.ccstudio.core.luaj;
 
 import org.luaj.vm2.LocVars;
 import org.luaj.vm2.Lua;
@@ -12,7 +12,6 @@ import java.util.Map;
 
 /**
  * Dumps the contents of a Lua prototype to a readable format
- * TODO: This is in totally the wrong place
  */
 public class DumpInstructions {
 	protected static final Map<Integer, String> opcodes;
