@@ -1,4 +1,4 @@
-local n = 100
+local n = 1000
 
 local key = util.getRandomData(16)
 local keySched = aes.expandEncryptionKey(key)
@@ -13,4 +13,4 @@ end
 
 local kByte = (n * 16) / 1024
 local duration = os.clock() - start
-string.format("kByte per second: %g", kByte / duration)
+print(string.format("\tkByte per second: %g", kByte / duration))
