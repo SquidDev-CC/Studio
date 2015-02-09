@@ -1,9 +1,13 @@
 package squidev.ccstudio.output.terminal;
 
+import jline.Terminal;
+import jline.TerminalFactory;
 import squidev.ccstudio.output.IOutput;
 
 import java.io.InputStream;
 import java.io.PrintStream;
+
+import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * squidev.ccstudio.output.terminal (CCStudio.Java
@@ -11,19 +15,21 @@ import java.io.PrintStream;
 public class TerminalOutput implements IOutput {
 	public static final String START_ESCAPE = "\27[";
 
-	public static final String CLEAR = START_ESCAPE + "2J";
-	public static final String CLEAR_LINE = START_ESCAPE + "2K";
-
 	public static final String HIDE_CURSOR = START_ESCAPE + "25l";
 	public static final String SHOW_CURSOR = START_ESCAPE + "25h";
 
 	public final PrintStream output;
 	public final InputStream input;
 
+	public static final Terminal terminal;
+	public static final boolean HAS_ANSI;
+
 	public TerminalOutput() {
 		output = System.out;
 		input = System.in;
 	}
+
+	int oldY = 1;
 
 	/**
 	 * Maps a CC color to a ANSI color
@@ -91,7 +97,12 @@ public class TerminalOutput implements IOutput {
 	 */
 	@Override
 	public void setCursor(int x, int y) {
-		output.print(START_ESCAPE + x + ";" + y + "H");
+		if (HAS_ANSI) {
+			output.print(START_ESCAPE + x + ";" + y + "H");
+		} else if (oldY != y) {
+			output.println();
+			oldY = y;
+		}
 	}
 
 	/**
@@ -101,7 +112,7 @@ public class TerminalOutput implements IOutput {
 	 */
 	@Override
 	public void setTextColor(int col) {
-		output.print(START_ESCAPE + getColor(col) + "m");
+		if (HAS_ANSI) output.print(START_ESCAPE + getColor(col) + "m");
 	}
 
 	/**
@@ -111,7 +122,7 @@ public class TerminalOutput implements IOutput {
 	 */
 	@Override
 	public void setBackColor(int col) {
-		output.print(START_ESCAPE + (getColor(col) + 10) + "m");
+		if (HAS_ANSI) output.print(START_ESCAPE + (getColor(col) + 10) + "m");
 	}
 
 	/**
@@ -121,6 +132,7 @@ public class TerminalOutput implements IOutput {
 	 */
 	@Override
 	public void setBlink(boolean blink) {
+		if (!HAS_ANSI) return;
 		if (blink) {
 			output.print(SHOW_CURSOR);
 		} else {
@@ -135,10 +147,11 @@ public class TerminalOutput implements IOutput {
 	 */
 	@Override
 	public void scroll(int amount) {
+		if (!HAS_ANSI) return;
 		if (amount > 0) {
-			output.print(START_ESCAPE + amount + "S");
+			output.print(ansi().scrollDown(amount));
 		} else if (amount < 0) {
-			output.print(START_ESCAPE + (-amount) + "S");
+			output.print(ansi().scrollUp(amount));
 		}
 	}
 
@@ -147,7 +160,8 @@ public class TerminalOutput implements IOutput {
 	 */
 	@Override
 	public void clear() {
-		output.print(CLEAR);
+		if (!HAS_ANSI) return;
+		output.print(ansi().eraseScreen());
 	}
 
 	/**
@@ -155,6 +169,22 @@ public class TerminalOutput implements IOutput {
 	 */
 	@Override
 	public void clearLine() {
-		output.print(CLEAR_LINE);
+		if (!HAS_ANSI) return;
+		output.print(ansi().eraseLine());
+	}
+
+	/**
+	 * Gets the current size. May not be obeyed.
+	 */
+	@Override
+	public int[] getSize() {
+		return new int[]{terminal.getWidth(), terminal.getHeight()};
+	}
+
+	static {
+		terminal = TerminalFactory.create();
+
+		// I find I need both
+		HAS_ANSI = terminal.isAnsiSupported() && System.console() != null;
 	}
 }

@@ -6,6 +6,7 @@ import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
+import org.luaj.vm2.lib.jse.JsePlatform;
 import squidev.ccstudio.computer.Computer;
 import squidev.ccstudio.core.Config;
 import squidev.ccstudio.core.testutils.ExpectException;
@@ -25,7 +26,7 @@ public class APIBuilderTest {
 		APIWrapper api = (APIWrapper) wrapped.getConstructor(EmbedClass.class).newInstance(new EmbedClass());
 
 		// Set environment and bind to a variable
-		env = new LuaTable();
+		env = JsePlatform.debugGlobals();
 		api.setup(new Computer(new Config()), env);
 		api.bind();
 

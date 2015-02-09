@@ -34,14 +34,19 @@ public class PeripheralAPI {
 	}
 
 	@LuaFunction
-	public Varargs call(String side, String methodName, Varargs args) {
-		// TODO: Dynamically build the peripheral wrapper instead. This is not a great method
-		IPeripheral peripheral = getPeripheral(side);
-		if (peripheral == null) throw new LuaError("No peripheral attached");
+	public Varargs call(Varargs args) {
+		if (args.narg() >= 2 && args.arg(1).isstring() && args.arg(2).isstring()) {
+			// TODO: Dynamically build the peripheral wrapper instead. This is not a great method
+			IPeripheral peripheral = getPeripheral(args.arg(1).toString());
+			if (peripheral == null) throw new LuaError("No peripheral attached");
 
-		LuaValue method = peripheral.getTable().get(methodName);
-		if (method == null || method == LuaValue.NIL) throw new LuaError("No such method " + methodName);
-		return method.invoke(args);
+			String methodName = args.arg(2).toString();
+			LuaValue method = peripheral.getTable().get(methodName);
+			if (method == null || method == LuaValue.NIL) throw new LuaError("No such method " + methodName);
+			return method.invoke(args.subargs(3));
+		}
+
+		throw new LuaError("Expected string, string");
 	}
 
 	public IPeripheral getPeripheral(String side) {

@@ -8,7 +8,6 @@ import squidev.ccstudio.computer.Computer;
 import squidev.ccstudio.computer.ComputerEnvironment;
 import squidev.ccstudio.core.apis.wrapper.LuaAPI;
 import squidev.ccstudio.core.apis.wrapper.LuaFunction;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -79,7 +78,7 @@ public class OSAPI {
 
 	@LuaFunction
 	public void reboot() {
-		throw new NotImplementedException();
+		throw new UnsupportedOperationException();
 	}
 
 	@LuaFunction({"getComputerId", "computerId"})

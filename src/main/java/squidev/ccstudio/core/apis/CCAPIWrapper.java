@@ -55,6 +55,9 @@ public abstract class CCAPIWrapper extends CCAPI {
 			this.index = index;
 		}
 
+		/**
+		 * We override the invoke function (not onInvoke) to prevent changing the stack
+		 */
 		@Override
 		public Varargs invoke(Varargs varargs) {
 			computer.tryAbort();

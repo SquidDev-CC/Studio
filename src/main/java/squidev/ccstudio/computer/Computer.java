@@ -5,19 +5,13 @@ import dan200.computercraft.api.filesystem.IWritableMount;
 import dan200.computercraft.core.filesystem.FileMount;
 import dan200.computercraft.core.filesystem.FileSystem;
 import dan200.computercraft.core.filesystem.FileSystemException;
-import org.luaj.vm2.LuaError;
-import org.luaj.vm2.LuaThread;
-import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.Varargs;
+import org.luaj.vm2.*;
 import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.ZeroArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.luajc.LuaJC;
-import squidev.ccstudio.computer.api.BitAPI;
-import squidev.ccstudio.computer.api.OSAPI;
-import squidev.ccstudio.computer.api.RedstoneAPI;
-import squidev.ccstudio.computer.api.TerminalAPI;
+import org.luaj.vm2.luajc.LuaJCWorking;
+import squidev.ccstudio.computer.api.*;
 import squidev.ccstudio.core.Config;
 import squidev.ccstudio.core.apis.CCAPI;
 import squidev.ccstudio.core.apis.wrapper.APIClassLoader;
@@ -93,8 +87,6 @@ public class Computer {
 
 	// The coroutine API
 	protected LuaValue coroutineCreate;
-	protected LuaValue coroutineYield;
-	protected LuaValue coroutineResume;
 	/**
 	 * Triggers a LuaError inside the computer
 	 */
@@ -119,7 +111,9 @@ public class Computer {
 		addAPI(new OSAPI(this));
 		addAPI(new RedstoneAPI(environment));
 		addAPI(new BitAPI());
-		addAPI(new TerminalAPI(this.output));
+		addAPI(TerminalAPI.calculateSize(output));
+		addAPI(new FileSystemAPI(this));
+		addAPI(new PeripheralAPI());
 	}
 
 	/**
@@ -153,61 +147,58 @@ public class Computer {
 	protected void setup() {
 		if (!createFilesystem()) throw new RuntimeException("Cannot create filesystem");
 
-		{
-			globals = JsePlatform.debugGlobals();
+		globals = JsePlatform.debugGlobals();
 
-			// Sadly this isn't a local thing we can't really customise this
-			if (config.useLuaJC) LuaJC.install();
+		// Sadly this isn't a local thing we can't really customise this
+		if (config.useLuaJC) {
+			LuaJCWorking.install();
+		}
 
-			LuaValue coroutineLib = globals.get("coroutine");
-			if (config.coroutineHookCount > 0) {
-				final LuaValue coroutineCreate = coroutineLib.get("create");
+		LuaValue coroutineLib = globals.get("coroutine");
+		if (config.coroutineHookCount > 0) {
+			final LuaValue coroutineCreate = coroutineLib.get("create");
 
-				final LuaValue setHook = globals.get("debug").get("sethook");
+			final LuaValue setHook = globals.get("debug").get("sethook");
 
-				// We need to insert a new version of the Coroutine library
-				coroutineLib.set("create", new OneArgFunction() {
-					@Override
-					public LuaValue call(LuaValue arg) {
-						LuaValue coroutine = coroutineCreate.call(arg).checkthread();
-
-						// Every <n> instructions:
-						setHook.invoke(new LuaValue[]{
-							coroutine,
-							new ZeroArgFunction() {
-								@Override
-								public LuaValue call() {
-									// Check if the computer should abort, if so then yield this co-routine
-									if (Computer.this.hardAbort != null) {
-										LuaThread.yield(LuaValue.NONE);
-									}
-									return LuaValue.NONE;
+			// We need to insert a new version of the Coroutine library
+			coroutineLib.set("create", new OneArgFunction() {
+				@Override
+				public LuaValue call(LuaValue arg) {
+					LuaValue coroutine = coroutineCreate.call(arg).checkthread();
+					// Every <n> instructions:
+					setHook.invoke(new LuaValue[]{
+						coroutine,
+						new ZeroArgFunction() {
+							@Override
+							public LuaValue call() {
+								// Check if the computer should abort, if so then yield this co-routine
+								if (Computer.this.hardAbort != null) {
+									LuaThread.yield(LuaValue.NONE);
 								}
-							}, LuaValue.NIL, LuaValue.valueOf(config.coroutineHookCount)
-						});
+								return LuaValue.NONE;
+							}
+						}, LuaValue.NIL, LuaValue.valueOf(config.coroutineHookCount)
+					});
 
-						return coroutine;
-					}
-				});
-			}
-
-			coroutineCreate = coroutineLib.get("create");
-			coroutineYield = coroutineLib.get("yield");
-			coroutineResume = coroutineLib.get("resume");
-
-			// Load the APIs
-			for (CCAPI api : apis) {
-				if (api != null) {
-					// Set environment and bind to the environment
-					api.setup(this, globals);
-					api.bind();
+					return coroutine;
 				}
-			}
+			});
+		}
 
-			// Clear all the blacklisted globals
-			LuaValue nil = LuaValue.NIL;
-			for (String global : config.blacklist) {
-				globals.set(global, nil);
+		coroutineCreate = coroutineLib.get("create");
+
+		// Clear all the blacklisted globals
+		LuaValue nil = LuaValue.NIL;
+		for (String global : config.blacklist) {
+			globals.set(global, nil);
+		}
+
+		// Load the APIs
+		for (CCAPI api : apis) {
+			if (api != null) {
+				// Set environment and bind to the environment
+				api.setup(this, globals);
+				api.bind();
 			}
 		}
 	}
@@ -234,9 +225,11 @@ public class Computer {
 			// Load the stream
 			Varargs program = BaseLib.loadStream(bios, "bios");
 			if (!program.arg1().toboolean()) throw new LuaError("Cannot load bios: " + program.arg(2).tostring());
+			LuaFunction start = (LuaFunction) program.arg1();
+			start.setfenv(globals);
 
 			// And execute in a new thread
-			mainCoroutine = (LuaThread) this.coroutineCreate.call(program.arg1());
+			mainCoroutine = (LuaThread) this.coroutineCreate.call(start);
 		} catch (LuaError e) {
 			if (this.mainCoroutine != null) {
 				mainCoroutine.abandon();
@@ -261,9 +254,9 @@ public class Computer {
 				public void run() {
 					setup();
 					loadBios();
+					mainCoroutine.resume(LuaValue.NONE);
 				}
 			});
-			queueEvent("paste", LuaValue.valueOf("ls"));
 			mainThread.start();
 		}
 	}
@@ -318,7 +311,11 @@ public class Computer {
 	 */
 	public void resume(Varargs args) {
 		try {
-			Varargs result = coroutineResume.invoke(LuaThread.getRunning(), args);
+			Varargs result = mainCoroutine.resume(args);
+
+			if (mainCoroutine.getStatus().equals("dead")) {
+				mainCoroutine = null;
+			}
 
 			// If we have some sort of error message, stop everything
 			if (hardAbort != null) throw new LuaError(hardAbort);
@@ -333,14 +330,14 @@ public class Computer {
 			} else {
 				this.filter = null;
 			}
+		} catch (LuaError e) {
+			e.printStackTrace();
 
-			if (mainCoroutine.getStatus().equals("dead")) {
+			mainThread.stop();
+			if (mainCoroutine != null) {
+				mainCoroutine.abandon();
 				mainCoroutine = null;
 			}
-		} catch (LuaError e) {
-			mainCoroutine.abandon();
-			mainCoroutine = null;
-
 			// TODO: We should push a notification
 		} finally {
 			hardAbort = null;
@@ -444,5 +441,16 @@ public class Computer {
 		} catch (FileSystemException e) {
 			return false;
 		}
+	}
+
+	public FileSystem getFileSystem() {
+		if (fileSystem == null) createFilesystem();
+		return fileSystem;
+	}
+
+	public CCAPI createLuaObject(Object object) {
+		CCAPI api = loader.makeInstance(object);
+		api.setup(this, globals);
+		return api;
 	}
 }

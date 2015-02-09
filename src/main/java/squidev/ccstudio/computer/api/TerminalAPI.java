@@ -37,11 +37,16 @@ public class TerminalAPI {
 		this(51, 19, true, output);
 	}
 
+	public static TerminalAPI calculateSize(IOutput output) {
+		int[] size = output.getSize();
+		return new TerminalAPI(size[0], size[1], true, output);
+	}
+
 	@LuaFunction
 	public void write(String text) {
 		int length = text.length();
 		if (cursorX <= width && cursorY > 0 && cursorY <= height && length > 0) {
-			output.write(text.replace("\t", " ").substring(-cursorX, width - cursorX));
+			output.write(text.replace("\t", " ").substring(0, Math.min(length, width - cursorX)));
 			setInternalCursorPos(cursorX + length, cursorY);
 		}
 	}
@@ -73,11 +78,12 @@ public class TerminalAPI {
 		output.setCursor(x, y);
 	}
 
+	@LuaFunction
 	public void setCursorBlink(boolean blink) {
 		output.setBlink(blink);
 	}
 
-	@LuaFunction
+	@LuaFunction({"isColor", "isColour"})
 	public boolean isColor() {
 		return hasColor;
 	}
@@ -97,6 +103,7 @@ public class TerminalAPI {
 		output.setTextColor(validateColor(color));
 	}
 
+	@LuaFunction({"setBackgroundColor", "setBackgroundColour"})
 	public void setBackgroundColor(double color) {
 		output.setTextColor(validateColor(color));
 	}

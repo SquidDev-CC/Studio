@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
 	compile group: 'org.ow2.asm', name: 'asm-all', version: '5.+'
+	compile group: 'jline', name: 'jline', version: '2.+'
 	compile files('lib/ComputerCraft1.65.jar')
 	testCompile group: 'junit', name: 'junit', version: '4.+'
 }

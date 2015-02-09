@@ -1,5 +1,6 @@
 package squidev.ccstudio.computer;
 
+import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 
 /**
@@ -13,11 +14,13 @@ public class ComputerEvent implements Runnable {
 	public ComputerEvent(Computer computer, String name, Varargs arguments) {
 		this.computer = computer;
 		eventName = name;
-		args = arguments;
+		this.args = LuaValue.varargsOf(LuaValue.valueOf(name), arguments);
 	}
 
 	public ComputerEvent(Computer computer, Varargs arguments) {
-		this(computer, arguments.arg1().checkstring().tojstring(), arguments.subargs(2));
+		this.computer = computer;
+		this.eventName = arguments.arg1().toString();
+		this.args = arguments;
 	}
 
 	public String name() {

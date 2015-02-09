@@ -56,4 +56,9 @@ public interface IOutput {
 	 * Clear the current line
 	 */
 	public abstract void clearLine();
+
+	/**
+	 * Gets the current size. May not be obeyed.
+	 */
+	public abstract int[] getSize();
 }
