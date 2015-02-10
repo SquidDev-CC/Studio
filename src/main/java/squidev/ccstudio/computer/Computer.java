@@ -111,7 +111,7 @@ public class Computer {
 		addAPI(new OSAPI(this));
 		addAPI(new RedstoneAPI(environment));
 		addAPI(new BitAPI());
-		addAPI(TerminalAPI.calculateSize(output));
+		addAPI(new TerminalAPI(output));
 		addAPI(new FileSystemAPI(this));
 		addAPI(new PeripheralAPI());
 	}

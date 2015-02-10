@@ -9,9 +9,9 @@ import java.io.PrintStream;
 import static org.fusesource.jansi.Ansi.ansi;
 
 /**
- * squidev.ccstudio.output.terminal (CCStudio.Java
+ * A config handler that outputs to the console
  */
-public class TerminalOutput implements IOutput {
+public class TerminalOutput implements IOutput, IOutput.ITerminalConfig {
 	public static final String START_ESCAPE = "\27[";
 
 	public static final String HIDE_CURSOR = START_ESCAPE + "25l";
@@ -24,11 +24,7 @@ public class TerminalOutput implements IOutput {
 	public static final boolean SUPPORTED;
 
 	public TerminalOutput() {
-		if (SUPPORTED) {
-			output = new PrintStream(TERMINAL.wrapOutIfNeeded(System.out));
-		} else {
-			output = System.out;
-		}
+		output = System.out;
 	}
 
 	int oldY = 1;
@@ -87,8 +83,8 @@ public class TerminalOutput implements IOutput {
 	 * @param msg The string to write
 	 */
 	@Override
-	public void write(String msg) {
-		output.print(msg);
+	public void write(byte[] msg) {
+		for (byte b : msg) output.print(b);
 	}
 
 	/**
@@ -176,15 +172,20 @@ public class TerminalOutput implements IOutput {
 	}
 
 	/**
-	 * Gets the current size. May not be obeyed.
+	 * Gets the current config. May not be obeyed.
 	 */
 	@Override
-	public int[] getSize() {
-		if (SUPPORTED) {
-			return new int[]{TERMINAL.getWidth(), TERMINAL.getHeight()};
-		} else {
-			return new int[]{51, 19};
-		}
+	public ITerminalConfig getDefaults() {
+		return this;
+	}
+
+	/**
+	 * Sets the current config.
+	 *
+	 * @param config The config data
+	 */
+	@Override
+	public void setConfig(ITerminalConfig config) {
 	}
 
 	static {
@@ -197,5 +198,20 @@ public class TerminalOutput implements IOutput {
 			HAS_ANSI = TERMINAL.isAnsiSupported();
 			SUPPORTED = true;
 		}
+	}
+
+	@Override
+	public boolean isColor() {
+		return HAS_ANSI;
+	}
+
+	@Override
+	public int getWidth() {
+		return SUPPORTED ? TERMINAL.getWidth() : IOutput.WIDTH;
+	}
+
+	@Override
+	public int getHeight() {
+		return SUPPORTED ? TERMINAL.getWidth() : IOutput.HEIGHT;
 	}
 }

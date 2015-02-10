@@ -4,12 +4,15 @@ package squidev.ccstudio.output;
  * Basic functions to write to a terminal
  */
 public interface IOutput {
+	public static final int WIDTH = 51;
+	public static final int HEIGHT = 19;
+
 	/**
 	 * Write a string to the terminal
 	 *
-	 * @param msg The string to write
+	 * @param msg The characters to write
 	 */
-	public abstract void write(String msg);
+	public abstract void write(byte[] msg);
 
 	/**
 	 * Set cursor position
@@ -58,7 +61,49 @@ public interface IOutput {
 	public abstract void clearLine();
 
 	/**
-	 * Gets the current size. May not be obeyed.
+	 * Gets the current config. May not be obeyed.
 	 */
-	public abstract int[] getSize();
+	public abstract ITerminalConfig getDefaults();
+
+	/**
+	 * Sets the current config
+	 *
+	 * @param config The config data
+	 */
+	public abstract void setConfig(ITerminalConfig config);
+
+	public static interface ITerminalConfig {
+		public abstract boolean isColor();
+
+		public abstract int getWidth();
+
+		public abstract int getHeight();
+	}
+
+	public class TerminalConfig implements ITerminalConfig {
+		protected final boolean color;
+		protected final int width;
+		protected final int height;
+
+		public TerminalConfig(int width, int height, boolean color) {
+			this.width = width;
+			this.height = height;
+			this.color = color;
+		}
+
+		@Override
+		public boolean isColor() {
+			return color;
+		}
+
+		@Override
+		public int getWidth() {
+			return width;
+		}
+
+		@Override
+		public int getHeight() {
+			return height;
+		}
+	}
 }

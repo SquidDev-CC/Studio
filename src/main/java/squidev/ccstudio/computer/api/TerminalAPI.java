@@ -22,34 +22,45 @@ public class TerminalAPI {
 	public int cursorX = 0;
 	public int cursorY = 0;
 
-	public TerminalAPI(int width, int height, boolean color, IOutput output) {
-		this.width = width;
-		this.height = height;
+	public TerminalAPI(IOutput output, IOutput.ITerminalConfig config) {
+		this.width = config.getWidth();
+		this.height = config.getHeight();
 
 		this.size = LuaValue.varargsOf(LuaValue.valueOf(width), LuaValue.valueOf(height));
 
-		this.hasColor = color;
+		this.hasColor = config.isColor();
 
 		this.output = output;
 	}
 
 	public TerminalAPI(IOutput output) {
-		this(51, 19, true, output);
+		this(output, output.getDefaults());
 	}
 
-	public static TerminalAPI calculateSize(IOutput output) {
-		int[] size = output.getSize();
-		return new TerminalAPI(size[0], size[1], true, output);
+	public static TerminalAPI defaults(IOutput output) {
+		return new TerminalAPI(output, new IOutput.TerminalConfig(IOutput.WIDTH, IOutput.HEIGHT, true));
 	}
 
 	@LuaFunction
 	public void write(String text) {
 		int length = text.length();
 		if (cursorX < width && cursorY >= 0 && cursorY < height && length > 0) {
-			output.write(text.replace('\t', ' ').substring(
-					Math.max(0, -cursorX),
-					Math.min(length, width - cursorX)
-			));
+			byte[] bytes = text.substring(
+				Math.max(0, -cursorX),
+				Math.min(length, width - cursorX)
+			).getBytes();
+
+			int byteLength = bytes.length;
+			for (int i = 0; i < byteLength; i++) {
+				byte character = bytes[i];
+				if (character == '\t') {
+					bytes[i] = ' ';
+				} else if (character >= ' ' && character <= '~') {
+					bytes[i] = '?';
+				}
+			}
+
+			output.write(bytes);
 			setInternalCursorPos(cursorX + length, cursorY);
 		}
 	}
