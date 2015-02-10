@@ -453,4 +453,8 @@ public class Computer {
 		api.setup(this, globals);
 		return api;
 	}
+
+	public boolean isAlive() {
+		return mainThread != null && mainThread.getState() != ComputerThread.State.STOPPED;
+	}
 }

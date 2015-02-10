@@ -4,7 +4,6 @@ import jline.Terminal;
 import jline.TerminalFactory;
 import squidev.ccstudio.output.IOutput;
 
-import java.io.InputStream;
 import java.io.PrintStream;
 
 import static org.fusesource.jansi.Ansi.ansi;
@@ -19,14 +18,17 @@ public class TerminalOutput implements IOutput {
 	public static final String SHOW_CURSOR = START_ESCAPE + "25h";
 
 	public final PrintStream output;
-	public final InputStream input;
 
-	public static final Terminal terminal;
+	public static final Terminal TERMINAL;
 	public static final boolean HAS_ANSI;
+	public static final boolean SUPPORTED;
 
 	public TerminalOutput() {
-		output = System.out;
-		input = System.in;
+		if (SUPPORTED) {
+			output = new PrintStream(TERMINAL.wrapOutIfNeeded(System.out));
+		} else {
+			output = System.out;
+		}
 	}
 
 	int oldY = 1;
@@ -178,13 +180,22 @@ public class TerminalOutput implements IOutput {
 	 */
 	@Override
 	public int[] getSize() {
-		return new int[]{terminal.getWidth(), terminal.getHeight()};
+		if (SUPPORTED) {
+			return new int[]{TERMINAL.getWidth(), TERMINAL.getHeight()};
+		} else {
+			return new int[]{51, 19};
+		}
 	}
 
 	static {
-		terminal = TerminalFactory.create();
-
-		// I find I need both
-		HAS_ANSI = terminal.isAnsiSupported() && System.console() != null;
+		if (System.console() == null) {
+			TERMINAL = null;
+			HAS_ANSI = false;
+			SUPPORTED = false;
+		} else {
+			TERMINAL = TerminalFactory.get();
+			HAS_ANSI = TERMINAL.isAnsiSupported();
+			SUPPORTED = true;
+		}
 	}
 }

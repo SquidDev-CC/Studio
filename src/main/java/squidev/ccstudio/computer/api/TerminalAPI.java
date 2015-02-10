@@ -45,8 +45,11 @@ public class TerminalAPI {
 	@LuaFunction
 	public void write(String text) {
 		int length = text.length();
-		if (cursorX <= width && cursorY > 0 && cursorY <= height && length > 0) {
-			output.write(text.replace("\t", " ").substring(0, Math.min(length, width - cursorX)));
+		if (cursorX < width && cursorY >= 0 && cursorY < height && length > 0) {
+			output.write(text.replace('\t', ' ').substring(
+					Math.max(0, -cursorX),
+					Math.min(length, width - cursorX)
+			));
 			setInternalCursorPos(cursorX + length, cursorY);
 		}
 	}
@@ -68,7 +71,7 @@ public class TerminalAPI {
 
 	@LuaFunction
 	public void setCursorPos(double x, double y) {
-		setInternalCursorPos((int) Math.floor(--x), (int) Math.floor(--y));
+		setInternalCursorPos((int) Math.floor(x - 1), (int) Math.floor(y - 1));
 	}
 
 	protected void setInternalCursorPos(int x, int y) {

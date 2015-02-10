@@ -144,7 +144,7 @@ public class ComputerThread {
 
 				try {
 					Thread worker = new Thread(events.take());
-					// worker.setDaemon(true);
+					worker.setDaemon(true);
 					worker.start();
 					switch (timeoutStyle) {
 						case NONE:
