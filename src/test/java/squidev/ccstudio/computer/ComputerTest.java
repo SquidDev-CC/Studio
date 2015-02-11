@@ -1,14 +1,17 @@
 package squidev.ccstudio.computer;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.luaj.vm2.LuaValue;
 import squidev.ccstudio.core.Config;
+import squidev.ccstudio.output.terminal.TerminalOutput;
 
+@Ignore
 public class ComputerTest {
 
 	@Test
 	public void testStart() throws Exception {
-		Computer comp = new Computer(new Config());
+		Computer comp = new Computer(new Config(), new TerminalOutput());
 
 		comp.start();
 		Object obj = new Object();

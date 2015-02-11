@@ -18,7 +18,6 @@ import squidev.ccstudio.core.apis.wrapper.APIClassLoader;
 import squidev.ccstudio.core.apis.wrapper.LuaAPI;
 import squidev.ccstudio.core.utils.FileSystemUtilities;
 import squidev.ccstudio.output.IOutput;
-import squidev.ccstudio.output.terminal.TerminalOutput;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -101,8 +100,8 @@ public class Computer {
 	protected IWritableMount rootMount;
 	protected IMount romMount;
 
-	public Computer(Config config) {
-		output = new TerminalOutput();
+	public Computer(Config config, IOutput output) {
+		this.output = output;
 
 		this.config = config;
 		environment = new ComputerEnvironment();

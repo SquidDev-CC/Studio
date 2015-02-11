@@ -3,7 +3,7 @@ package squidev.ccstudio.output;
 import java.util.Arrays;
 
 /**
- * squidev.ccstudio.output (Studio
+ * Buffers output
  */
 public class BufferedOutput implements IOutput {
 	public static final byte BLACK = 15;
@@ -11,19 +11,19 @@ public class BufferedOutput implements IOutput {
 
 	protected static final TerminalConfig DEFAULT_CONFIG = new TerminalConfig(WIDTH, HEIGHT, true);
 
-	byte[][] background;
-	byte[][] foreground;
-	byte[][] text;
-	int cursorX = 0;
-	int cursorY = 0;
+	protected byte[][] background;
+	protected byte[][] foreground;
+	protected byte[][] text;
 
-	byte currentBackground = BLACK;
-	byte currentForeground = WHITE;
+	protected int cursorX = 0;
+	protected int cursorY = 0;
+
+	protected byte currentBackground = BLACK;
+	protected byte currentForeground = WHITE;
 	boolean cursorBlink = false;
 
-	int width = WIDTH;
-	int height = HEIGHT;
-
+	protected int width = WIDTH;
+	protected int height = HEIGHT;
 
 	/**
 	 * Write a string to the terminal
@@ -189,6 +189,18 @@ public class BufferedOutput implements IOutput {
 	 */
 	@Override
 	public void setConfig(ITerminalConfig config) {
+		if (config.getWidth() != width || config.getHeight() != height) {
+			int w = width = config.getWidth();
+			int h = height = config.getHeight();
 
+			byte[][] back = background = new byte[h][w];
+			byte[][] fore = foreground = new byte[h][w];
+			byte[][] text = this.text = new byte[h][w];
+			for (int i = 0; i < h; i++) {
+				Arrays.fill(back[i], currentBackground);
+				Arrays.fill(text[i], (byte) ' ');
+				Arrays.fill(text[i], currentForeground);
+			}
+		}
 	}
 }

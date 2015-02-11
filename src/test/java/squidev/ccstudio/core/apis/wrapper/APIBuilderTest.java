@@ -10,6 +10,7 @@ import org.luaj.vm2.lib.jse.JsePlatform;
 import squidev.ccstudio.computer.Computer;
 import squidev.ccstudio.core.Config;
 import squidev.ccstudio.core.testutils.ExpectException;
+import squidev.ccstudio.output.terminal.TerminalOutput;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -27,7 +28,7 @@ public class APIBuilderTest {
 
 		// Set environment and bind to a variable
 		env = JsePlatform.debugGlobals();
-		api.setup(new Computer(new Config()), env);
+		api.setup(new Computer(new Config(), new TerminalOutput()), env);
 		api.bind();
 
 		table = api.getTable();

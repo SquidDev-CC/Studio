@@ -20,7 +20,7 @@ public class TerminalOutputMain {
 
 	public static void main(String[] args) {
 		Config config = new Config();
-		Computer computer = new Computer(config);
+		Computer computer = new Computer(config, new TerminalOutput());
 
 		computer.start();
 

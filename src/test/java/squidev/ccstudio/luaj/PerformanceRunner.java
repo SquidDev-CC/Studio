@@ -13,6 +13,7 @@ import squidev.ccstudio.computer.api.BitAPI;
 import squidev.ccstudio.core.Config;
 import squidev.ccstudio.core.apis.wrapper.APIClassLoader;
 import squidev.ccstudio.core.apis.wrapper.APIWrapper;
+import squidev.ccstudio.output.terminal.TerminalOutput;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -102,7 +103,7 @@ public class PerformanceRunner {
 
 		APIClassLoader loader = new APIClassLoader();
 		APIWrapper wrapper = loader.makeInstance(new BitAPI());
-		wrapper.setup(new Computer(new Config()), globals);
+		wrapper.setup(new Computer(new Config(), new TerminalOutput()), globals);
 		wrapper.bind();
 
 		return globals;

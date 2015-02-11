@@ -7,6 +7,8 @@ public interface IOutput {
 	public static final int WIDTH = 51;
 	public static final int HEIGHT = 19;
 
+	public static final ITerminalConfig DEFAULT_CONFIG = new TerminalConfig(WIDTH, HEIGHT, true);
+
 	/**
 	 * Write a string to the terminal
 	 *

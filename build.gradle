@@ -10,9 +10,17 @@ repositories {
 }
 
 dependencies {
+	// Core Libraries
 	compile group: 'org.ow2.asm', name: 'asm-all', version: '5.+'
-	compile group: 'jline', name: 'jline', version: '2.+'
 	compile files('lib/ComputerCraft1.65.jar')
+
+	// TerminalOutput dependencies
+	compile group: 'jline', name: 'jline', version: '2.+'
+
+	// LWJGL dependencies
+	// compile group: 'org.lwjgl.lwjgl', name: 'lwjgl', version: '2.9.3'
+	compile files('lib/lwjgl.jar')
+
 	testCompile group: 'junit', name: 'junit', version: '4.+'
 }
 
@@ -42,7 +50,7 @@ test {
 	}
 
 	// listen to standard out and standard error of the test JVM(s)
-	onOutput { descriptor, event ->
+	/*onOutput { descriptor, event ->
 		logger.lifecycle("Test: " + descriptor + " produced standard out/err: " + event.message)
-	}
+	}*/
 }

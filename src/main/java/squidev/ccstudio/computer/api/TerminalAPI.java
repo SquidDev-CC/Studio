@@ -23,6 +23,8 @@ public class TerminalAPI {
 	public int cursorY = 0;
 
 	public TerminalAPI(IOutput output, IOutput.ITerminalConfig config) {
+		output.setConfig(config);
+
 		this.width = config.getWidth();
 		this.height = config.getHeight();
 
@@ -38,7 +40,7 @@ public class TerminalAPI {
 	}
 
 	public static TerminalAPI defaults(IOutput output) {
-		return new TerminalAPI(output, new IOutput.TerminalConfig(IOutput.WIDTH, IOutput.HEIGHT, true));
+		return new TerminalAPI(output, IOutput.DEFAULT_CONFIG);
 	}
 
 	@LuaFunction
