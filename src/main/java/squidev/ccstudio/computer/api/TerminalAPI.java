@@ -57,7 +57,7 @@ public class TerminalAPI {
 				byte character = bytes[i];
 				if (character == '\t') {
 					bytes[i] = ' ';
-				} else if (character >= ' ' && character <= '~') {
+				} else if (character <= ' ' || character >= '~') {
 					bytes[i] = '?';
 				}
 			}

@@ -7,6 +7,11 @@ public interface IOutput {
 	public static final int WIDTH = 51;
 	public static final int HEIGHT = 19;
 
+	/**
+	 * Index of first character: 32 (" ")
+	 */
+	public static final byte FIRST_CHAR = 32;
+
 	public static final ITerminalConfig DEFAULT_CONFIG = new TerminalConfig(WIDTH, HEIGHT, true);
 
 	/**

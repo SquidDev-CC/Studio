@@ -22,8 +22,8 @@ public class BufferedOutput implements IOutput {
 	protected byte currentForeground = WHITE;
 	boolean cursorBlink = false;
 
-	protected int width = WIDTH;
-	protected int height = HEIGHT;
+	protected int width = -1;
+	protected int height = -1;
 
 	/**
 	 * Write a string to the terminal
@@ -35,6 +35,8 @@ public class BufferedOutput implements IOutput {
 		int x = cursorX;
 		int y = cursorY;
 		int l = msg.length;
+		cursorX = x + l;
+
 		System.arraycopy(msg, 0, text[y], x, l);
 
 		// Fill in the values

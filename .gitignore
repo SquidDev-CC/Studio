@@ -109,3 +109,4 @@ docs/
 /target
 /build
 !gradle-wrapper.jar
+/lib
