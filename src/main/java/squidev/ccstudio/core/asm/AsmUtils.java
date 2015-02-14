@@ -72,19 +72,18 @@ public class AsmUtils {
 		}
 	}
 
-	public static void validateClass(ClassReader reader) {
+	public static void validateClass(ClassReader reader, ClassLoader loader) {
 		StringWriter writer = new StringWriter();
 		PrintWriter printWriter = new PrintWriter(writer);
 
 		try {
-			CheckClassAdapter.verify(reader, false, printWriter);
+			CheckClassAdapter.verify(reader, loader, false, printWriter);
 		} catch (Exception e) {
 			e.printStackTrace(printWriter);
 		}
 
 		String contents = writer.toString();
-		// TODO: Override so this works. We need to ignore ClassNotFound as we don't load subclasses
-		if (contents.length() > 0 && !contents.contains("java.lang.ClassNotFoundException: ")) {
+		if (contents.length() > 0) {
 			reader.accept(new TraceClassVisitor(printWriter), 0);
 			System.out.println("Dump for " + reader.getClassName());
 			System.out.println(writer);
@@ -92,12 +91,16 @@ public class AsmUtils {
 		}
 	}
 
-	public static void validateClass(byte[] bytes) {
-		validateClass(new ClassReader(bytes));
+	public static void validateClass(byte[] bytes, ClassLoader loader) {
+		validateClass(new ClassReader(bytes), loader);
 	}
 
-	public static void validateClass(ClassWriter writer) {
-		validateClass(writer.toByteArray());
+	public static void validateClass(byte[] bytes) {
+		validateClass(new ClassReader(bytes), null);
+	}
+
+	public static void validateClass(ClassWriter writer, ClassLoader loader) {
+		validateClass(writer.toByteArray(), loader);
 	}
 
 	/**
