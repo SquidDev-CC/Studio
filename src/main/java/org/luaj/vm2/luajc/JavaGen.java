@@ -77,16 +77,22 @@ public class JavaGen {
 		for (int bi = 0; bi < pi.blocklist.length; bi++) {
 			BasicBlock b0 = pi.blocklist[bi];
 
-			// convert upvalues that are phi-variables
-			for (int slot = 0; slot < p.maxstacksize; slot++) {
-				int pc = b0.pc0;
-				boolean c = pi.isUpvalueCreate(pc, slot);
-				if (c && pi.vars[slot][pc].isPhiVar())
-					builder.convertToUpvalue(pc, slot);
-			}
-
+			boolean setUpvalues = false;
 			for (int pc = b0.pc0; pc <= b0.pc1; pc++) {
 				builder.onStartOfLuaInstruction(pc);
+
+				// For each block we should create upvalues for them. We have to do this after the first instruction
+				if (!setUpvalues) {
+					// convert upvalues that are phi-variables
+					for (int slot = 0; slot < p.maxstacksize; slot++) {
+						int up_pc = b0.pc0;
+						boolean c = pi.isUpvalueCreate(up_pc, slot);
+						if (c && pi.vars[slot][up_pc].isPhiVar()) {
+							builder.convertToUpvalue(up_pc, slot);
+						}
+					}
+					setUpvalues = true;
+				}
 
 				int ins = p.code[pc];
 				final int o = Lua.GET_OPCODE(ins);
@@ -421,13 +427,11 @@ public class JavaGen {
 						String protoname = closureName(className, bx);
 						int nup = newp.nups;
 						builder.closureCreate(protoname);
-						if (nup > 0)
-							builder.dup();
+						if (nup > 0) builder.dup();
 						builder.storeLocal(pc, a);
 						if (nup > 0) {
 							for (int up = 0; up < nup; ++up) {
-								if (up + 1 < nup)
-									builder.dup();
+								if (up + 1 < nup) builder.dup();
 								ins = p.code[pc + up + 1];
 								b = Lua.GETARG_B(ins);
 								if ((ins & 4) != 0) {

@@ -153,6 +153,8 @@ public class JavaBuilder {
 	// Varable naming
 	private static final String PREFIX_CONSTANT = "k";
 	private static final String PREFIX_UPVALUE = "u";
+	private static final String PREFIX_UPVALUE_SLOT = "a";
+	private static final String PREFIX_LOCAL_SLOT = "s";
 
 	// Basic info
 	private final ProtoInfo pi;
@@ -234,8 +236,11 @@ public class JavaBuilder {
 		maxLocals = superType.argsLength;
 
 		// Create class writer
-		// TODO: Do I need to compute frames?
-		writer = new LuaClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+		/*
+			We don't need to compute frames as slots do not change their type
+			TODO: Auto compute maxes and locals.
+		 */
+		writer = new LuaClassWriter(ClassWriter.COMPUTE_MAXS);
 
 		// Check the name of the class. We have no interfaces and no generics
 		writer.visit(V1_6, ACC_PUBLIC + ACC_SUPER, className, null, superType.className, INTERFACES);
@@ -422,11 +427,11 @@ public class JavaBuilder {
 
 	private int findSlotIndex(int slot, boolean isUpvalue) {
 		LuaString varName = p.getlocalname(slot, pc);
-		String name = (isUpvalue ? "u" : "l") + (varName == null ? slot : "_" + varName.toString());
+		String name = varName == null ? Integer.toString(slot) : ("_" + varName.toString());
 
 		return isUpvalue ?
-			findSlot(slot, upvalueSlotVars, name, TYPE_LOCALUPVALUE) :
-			findSlot(slot, plainSlotVars, name, TYPE_LUAVALUE);
+			findSlot(slot, upvalueSlotVars, PREFIX_UPVALUE_SLOT + name, TYPE_LOCALUPVALUE) :
+			findSlot(slot, plainSlotVars, PREFIX_LOCAL_SLOT + name, TYPE_LUAVALUE);
 	}
 
 	public void loadLocal(int pc, int slot) {

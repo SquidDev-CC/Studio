@@ -31,7 +31,7 @@ public class JavaBuilderTest {
 			{"Upvalues"},
 			{"Recursive"},
 			{"Error"},
-			{"Terminal"},
+			{"BranchUpvalue"},
 		};
 
 		return Arrays.asList(tests);
