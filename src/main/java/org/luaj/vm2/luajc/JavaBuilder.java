@@ -28,10 +28,11 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
-import squidev.ccstudio.core.Config;
-import squidev.ccstudio.core.asm.AsmUtils;
+import squidev.ccstudio.core.asm.LuaClassWriter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -152,8 +153,6 @@ public class JavaBuilder {
 	// Varable naming
 	private static final String PREFIX_CONSTANT = "k";
 	private static final String PREFIX_UPVALUE = "u";
-	private static final String PREFIX_PLAIN_SLOT = "s";
-	private static final String PREFIX_UPVALUE_SLOT = "a";
 
 	// Basic info
 	private final ProtoInfo pi;
@@ -185,10 +184,8 @@ public class JavaBuilder {
 	 */
 	private int varargsLocal = -1;
 
-	/**
-	 * The current lua source location
-	 */
-	private int pc = 0;
+	Label start;
+	Label end;
 
 	// the superclass arg count, 0-3 args, 4=varargs
 	private FunctionType superclass;
@@ -197,10 +194,14 @@ public class JavaBuilder {
 
 	// Storage for goto locations
 	private final Label[] branchDestinations;
-	private Label currentLabel = null;
 
 	// Storage for line numbers
 	private int previousLine = -1;
+
+	/**
+	 * The current program counter
+	 */
+	private int pc = 0;
 
 	public JavaBuilder(ProtoInfo pi, String className, String filename) {
 		this.pi = pi;
@@ -234,7 +235,7 @@ public class JavaBuilder {
 
 		// Create class writer
 		// TODO: Do I need to compute frames?
-		writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		writer = new LuaClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
 		// Check the name of the class. We have no interfaces and no generics
 		writer.visit(V1_6, ACC_PUBLIC + ACC_SUPER, className, null, superType.className, INTERFACES);
@@ -252,6 +253,10 @@ public class JavaBuilder {
 		// Create the invoke method
 		main = writer.visitMethod(ACC_PUBLIC + ACC_FINAL, superType.methodName, superType.signature, null, null);
 		main.visitCode();
+
+		start = new Label();
+		end = new Label();
+		main.visitLabel(start);
 
 		init = writer.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
 		init.visitCode();
@@ -351,17 +356,15 @@ public class JavaBuilder {
 		init.visitEnd();
 
 		// Finish main function
+		main.visitLabel(end);
 		main.visitMaxs(0, 0);
+		for (Slot slot : slots) slot.inject();
+
 		main.visitEnd();
 
 		writer.visitEnd();
 
-		// convert to class bytes
-		byte[] bytes = writer.toByteArray();
-		if (Config.verifySources) {
-			AsmUtils.validateClass(bytes);
-		}
-		return bytes;
+		return writer.toByteArray();
 	}
 
 	public void dup() {
@@ -387,21 +390,43 @@ public class JavaBuilder {
 
 	private Map<Integer, Integer> plainSlotVars = new HashMap<>();
 	private Map<Integer, Integer> upvalueSlotVars = new HashMap<>();
+	private List<Slot> slots = new ArrayList<>();
 
-	private int findSlot(int slot, Map<Integer, Integer> map) {
-		Integer luaSlot = slot;
+	protected class Slot {
+		public final int javaSlot;
+		public final String name;
+		public final String type;
+
+		public Slot(int javaSlot, String name, String type) {
+			this.javaSlot = javaSlot;
+			this.name = name;
+			this.type = type;
+		}
+
+		public void inject() {
+			main.visitLocalVariable(name, type, null, start, end, javaSlot);
+		}
+	}
+
+	private int findSlot(int luaSlot, Map<Integer, Integer> map, String name, String type) {
 		if (map.containsKey(luaSlot)) return map.get(luaSlot);
 
 		// This will always be an Upvalue/LuaValue so the slot size is 1 as it is a reference
 		int javaSlot = ++maxLocals;
 		map.put(luaSlot, javaSlot);
+		if (name != null) {
+			slots.add(new Slot(javaSlot, name, type));
+		}
 		return javaSlot;
 	}
 
 	private int findSlotIndex(int slot, boolean isUpvalue) {
+		LuaString varName = p.getlocalname(slot, pc);
+		String name = (isUpvalue ? "u" : "l") + (varName == null ? slot : "_" + varName.toString());
+
 		return isUpvalue ?
-			findSlot(slot, upvalueSlotVars) :
-			findSlot(slot, plainSlotVars);
+			findSlot(slot, upvalueSlotVars, name, TYPE_LOCALUPVALUE) :
+			findSlot(slot, plainSlotVars, name, TYPE_LUAVALUE);
 	}
 
 	public void loadLocal(int pc, int slot) {
@@ -860,7 +885,7 @@ public class JavaBuilder {
 	 */
 	public void onStartOfLuaInstruction(int pc) {
 		this.pc = pc;
-		currentLabel = branchDestinations[pc];
+		Label currentLabel = branchDestinations[pc];
 
 		main.visitLabel(currentLabel);
 

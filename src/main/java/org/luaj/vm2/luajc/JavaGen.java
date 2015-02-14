@@ -23,41 +23,54 @@ package org.luaj.vm2.luajc;
 
 import org.luaj.vm2.Lua;
 import org.luaj.vm2.Prototype;
+import squidev.ccstudio.core.asm.AsmUtils;
 
 public class JavaGen {
 
-	public final String classname;
+	public final String className;
 	public final byte[] bytecode;
 	public final JavaGen[] inners;
 
-	public JavaGen(Prototype p, String classname, String filename) {
-		this(new ProtoInfo(p, classname), classname, filename);
+	protected boolean validated = false;
+
+	public JavaGen(Prototype p, String className, String filename) {
+		this(new ProtoInfo(p, className), className, filename);
 	}
 
-	private JavaGen(ProtoInfo pi, String classname, String filename) {
-		this.classname = classname;
+	private JavaGen(ProtoInfo pi, String className, String filename) {
+		this.className = className;
 
 		// build this class
-		JavaBuilder builder = new JavaBuilder(pi, classname, filename);
-		scanInstructions(pi, classname, builder);
-		this.bytecode = builder.completeClass();
+		JavaBuilder builder = new JavaBuilder(pi, className, filename);
+		scanInstructions(pi, className, builder);
+		bytecode = builder.completeClass();
 
 		// build sub-prototypes
 		if (pi.subprotos != null) {
 			int n = pi.subprotos.length;
 			inners = new JavaGen[n];
-			for (int i = 0; i < n; i++)
-				inners[i] = new JavaGen(pi.subprotos[i], closureName(classname, i), filename);
+			for (int i = 0; i < n; i++) {
+				inners[i] = new JavaGen(pi.subprotos[i], closureName(className, i), filename);
+			}
 		} else {
 			inners = null;
 		}
 	}
 
-	private String closureName(String classname, int subprotoindex) {
-		return classname + "$" + subprotoindex;
+	public void validate(ClassLoader loader) {
+		// Validating is slow, validate if we have to
+		if (validated) return;
+		validated = true;
+
+		// Validate at the end so other classes are generated
+		AsmUtils.validateClass(this.bytecode, loader);
 	}
 
-	private void scanInstructions(ProtoInfo pi, String classname, JavaBuilder builder) {
+	private String closureName(String className, int subprotoindex) {
+		return className + "$" + subprotoindex;
+	}
+
+	private void scanInstructions(ProtoInfo pi, String className, JavaBuilder builder) {
 		Prototype p = pi.prototype;
 		int vresultbase = -1;
 
@@ -405,7 +418,7 @@ public class JavaGen {
 
 					case Lua.OP_CLOSURE: /*	A Bx	R(A):= closure(KPROTO[Bx], R(A), ... ,R(A+n))	*/ {
 						Prototype newp = p.p[bx];
-						String protoname = closureName(classname, bx);
+						String protoname = closureName(className, bx);
 						int nup = newp.nups;
 						builder.closureCreate(protoname);
 						if (nup > 0)

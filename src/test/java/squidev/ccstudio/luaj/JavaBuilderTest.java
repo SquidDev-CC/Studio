@@ -30,7 +30,8 @@ public class JavaBuilderTest {
 			{"Function"},
 			{"Upvalues"},
 			{"Recursive"},
-			{"Error"}
+			{"Error"},
+			{"Terminal"},
 		};
 
 		return Arrays.asList(tests);
