@@ -33,6 +33,7 @@ public class JavaBuilderTest {
 			{"Error"},
 			{"BranchUpvalue"},
 			{"RecursiveTrace"},
+			{"TailCall"},
 		};
 
 		return Arrays.asList(tests);
