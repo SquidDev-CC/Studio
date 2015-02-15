@@ -31,22 +31,22 @@ import java.util.Map;
  * THE SOFTWARE.
  * ****************************************************************************
  */
-public class JavaLoader extends ClassLoader {
+public class JavaLoaderRewrite extends ClassLoader {
 
 	private final LuaValue env;
 
 	private Map<String, byte[]> unloaded = new HashMap<>();
 
-	public JavaLoader(LuaValue env) {
+	public JavaLoaderRewrite(LuaValue env) {
 		this.env = env;
 	}
 
 	public LuaFunction load(Prototype p, String className, String filename) {
-		JavaGen jg = new JavaGen(p, className, filename);
+		JavaGenRewrite jg = new JavaGenRewrite(p, className, filename);
 		return load(jg);
 	}
 
-	public LuaFunction load(JavaGen jg) {
+	public LuaFunction load(JavaGenRewrite jg) {
 		include(jg);
 		return load(jg.className);
 	}
@@ -62,7 +62,7 @@ public class JavaLoader extends ClassLoader {
 		}
 	}
 
-	public void include(JavaGen jg) {
+	public void include(JavaGenRewrite jg) {
 		unloaded.put(jg.className, jg.bytecode);
 		for (int i = 0, n = jg.inners != null ? jg.inners.length : 0; i < n; i++) {
 			include(jg.inners[i]);

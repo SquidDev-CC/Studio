@@ -25,32 +25,32 @@ import org.luaj.vm2.Lua;
 import org.luaj.vm2.Prototype;
 import squiddev.ccstudio.core.asm.AsmUtils;
 
-public class JavaGen {
+public class JavaGenRewrite {
 
 	public final String className;
 	public final byte[] bytecode;
-	public final JavaGen[] inners;
+	public final JavaGenRewrite[] inners;
 
 	protected boolean validated = false;
 
-	public JavaGen(Prototype p, String className, String filename) {
+	public JavaGenRewrite(Prototype p, String className, String filename) {
 		this(new ProtoInfo(p, className), className, filename);
 	}
 
-	private JavaGen(ProtoInfo pi, String className, String filename) {
+	private JavaGenRewrite(ProtoInfo pi, String className, String filename) {
 		this.className = className;
 
 		// build this class
-		JavaBuilder builder = new JavaBuilder(pi, className, filename);
+		JavaBuilderRewrite builder = new JavaBuilderRewrite(pi, className, filename);
 		scanInstructions(pi, className, builder);
 		bytecode = builder.completeClass();
 
 		// build sub-prototypes
 		if (pi.subprotos != null) {
 			int n = pi.subprotos.length;
-			inners = new JavaGen[n];
+			inners = new JavaGenRewrite[n];
 			for (int i = 0; i < n; i++) {
-				inners[i] = new JavaGen(pi.subprotos[i], closureName(className, i), filename);
+				inners[i] = new JavaGenRewrite(pi.subprotos[i], closureName(className, i), filename);
 			}
 		} else {
 			inners = null;
@@ -70,7 +70,7 @@ public class JavaGen {
 		return className + "$" + subprotoindex;
 	}
 
-	private void scanInstructions(ProtoInfo pi, String className, JavaBuilder builder) {
+	private void scanInstructions(ProtoInfo pi, String className, JavaBuilderRewrite builder) {
 		Prototype p = pi.prototype;
 		int vresultbase = -1;
 
@@ -211,11 +211,11 @@ public class JavaGen {
 						builder.loadBoolean(b != 0);
 						builder.storeLocal(pc, a);
 						if (c != 0)
-							builder.addBranch(JavaBuilder.BRANCH_GOTO, pc + 2);
+							builder.addBranch(JavaBuilderRewrite.BRANCH_GOTO, pc + 2);
 						break;
 
 					case Lua.OP_JMP: /*	sBx	pc+=sBx					*/
-						builder.addBranch(JavaBuilder.BRANCH_GOTO, pc + 1 + sbx);
+						builder.addBranch(JavaBuilderRewrite.BRANCH_GOTO, pc + 1 + sbx);
 						break;
 
 					case Lua.OP_EQ: /*	A B C	if ((RK(B) == RK(C)) ~= A) then pc++		*/
@@ -224,19 +224,19 @@ public class JavaGen {
 						loadLocalOrConstant(p, builder, pc, b);
 						loadLocalOrConstant(p, builder, pc, c);
 						builder.compareop(o);
-						builder.addBranch((a != 0 ? JavaBuilder.BRANCH_IFEQ : JavaBuilder.BRANCH_IFNE), pc + 2);
+						builder.addBranch((a != 0 ? JavaBuilderRewrite.BRANCH_IFEQ : JavaBuilderRewrite.BRANCH_IFNE), pc + 2);
 						break;
 
 					case Lua.OP_TEST: /*	A C	if not (R(A) <=> C) then pc++			*/
 						builder.loadLocal(pc, a);
 						builder.toBoolean();
-						builder.addBranch((c != 0 ? JavaBuilder.BRANCH_IFEQ : JavaBuilder.BRANCH_IFNE), pc + 2);
+						builder.addBranch((c != 0 ? JavaBuilderRewrite.BRANCH_IFEQ : JavaBuilderRewrite.BRANCH_IFNE), pc + 2);
 						break;
 
 					case Lua.OP_TESTSET: /*	A B C	if (R(B) <=> C) then R(A):= R(B) else pc++	*/
 						builder.loadLocal(pc, b);
 						builder.toBoolean();
-						builder.addBranch((c != 0 ? JavaBuilder.BRANCH_IFEQ : JavaBuilder.BRANCH_IFNE), pc + 2);
+						builder.addBranch((c != 0 ? JavaBuilderRewrite.BRANCH_IFEQ : JavaBuilderRewrite.BRANCH_IFNE), pc + 2);
 						builder.loadLocal(pc, b);
 						builder.storeLocal(pc, a);
 						break;
@@ -349,7 +349,7 @@ public class JavaGen {
 						builder.loadLocal(pc, a + 2);
 						builder.binaryop(Lua.OP_SUB);
 						builder.storeLocal(pc, a);
-						builder.addBranch(JavaBuilder.BRANCH_GOTO, pc + 1 + sbx);
+						builder.addBranch(JavaBuilderRewrite.BRANCH_GOTO, pc + 1 + sbx);
 						break;
 
 					case Lua.OP_FORLOOP: /*	A sBx	R(A)+=R(A+2): if R(A) <?= R(A+1) then { pc+=sBx: R(A+3)=R(A) }*/
@@ -363,7 +363,7 @@ public class JavaGen {
 						builder.loadLocal(pc, a + 1); // limit
 						builder.loadLocal(pc, a + 2); // step
 						builder.testForLoop();
-						builder.addBranch(JavaBuilder.BRANCH_IFNE, pc + 1 + sbx);
+						builder.addBranch(JavaBuilderRewrite.BRANCH_IFNE, pc + 1 + sbx);
 						break;
 
 					case Lua.OP_TFORLOOP: /*
@@ -382,7 +382,7 @@ public class JavaGen {
 						builder.storeVarresult();
 						builder.arg(1);
 						builder.isNil();
-						builder.addBranch(JavaBuilder.BRANCH_IFNE, pc + 2);
+						builder.addBranch(JavaBuilderRewrite.BRANCH_IFNE, pc + 2);
 
 						// a[2] = a[3] = v[1], leave varargs on stack
 						builder.createUpvalues(pc, a + 3, c);
@@ -461,7 +461,7 @@ public class JavaGen {
 		}
 	}
 
-	private void loadVarargResults(JavaBuilder builder, int pc, int a, int vresultbase) {
+	private void loadVarargResults(JavaBuilderRewrite builder, int pc, int a, int vresultbase) {
 		if (vresultbase <= a) {
 			builder.loadVarresult();
 			builder.subargs(a + 1 - vresultbase);
@@ -472,7 +472,7 @@ public class JavaGen {
 		}
 	}
 
-	private void loadLocalOrConstant(Prototype p, JavaBuilder builder, int pc, int borc) {
+	private void loadLocalOrConstant(Prototype p, JavaBuilderRewrite builder, int pc, int borc) {
 		if (borc <= 0xff)
 			builder.loadLocal(pc, borc);
 		else

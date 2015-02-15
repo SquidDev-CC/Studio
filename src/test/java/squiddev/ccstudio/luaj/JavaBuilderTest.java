@@ -7,7 +7,7 @@ import org.luaj.vm2.LoadState;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.ThreeArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.luajc.LuaJCWorking;
+import org.luaj.vm2.luajc.LuaJCRewrite;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,7 +43,7 @@ public class JavaBuilderTest {
 	public JavaBuilderTest(String name) {
 		globals = JsePlatform.debugGlobals();
 		globals.set("assertEquals", new AssertFunction());
-		LuaJCWorking.install();
+		LuaJCRewrite.install();
 
 		this.name = name;
 	}

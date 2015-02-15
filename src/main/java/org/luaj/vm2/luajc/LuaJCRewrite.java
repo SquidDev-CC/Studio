@@ -35,13 +35,13 @@ import java.io.InputStream;
  * Alternative version of LuaJC which fixes class names properly.
  * For instance chunk-name breaks in LuaJC
  */
-public class LuaJCWorking implements LoadState.LuaCompiler {
+public class LuaJCRewrite implements LoadState.LuaCompiler {
 	protected static final String NON_IDENTIFIER = "[^a-zA-Z0-9_]";
 
-	protected static LuaJCWorking instance;
+	protected static LuaJCRewrite instance;
 
-	public static LuaJCWorking getInstance() {
-		if (instance == null) instance = new LuaJCWorking();
+	public static LuaJCRewrite getInstance() {
+		if (instance == null) instance = new LuaJCRewrite();
 		return instance;
 	}
 
@@ -56,7 +56,7 @@ public class LuaJCWorking implements LoadState.LuaCompiler {
 		Prototype p = LuaC.compile(stream, name);
 		String className = toStandardJavaClassName(name);
 
-		JavaLoader loader = new JavaLoader(env);
+		JavaLoaderRewrite loader = new JavaLoaderRewrite(env);
 		return loader.load(p, className, name);
 	}
 

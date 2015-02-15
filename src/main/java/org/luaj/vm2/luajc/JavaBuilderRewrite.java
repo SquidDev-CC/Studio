@@ -39,7 +39,7 @@ import static org.objectweb.asm.Opcodes.*;
 import static squiddev.ccstudio.core.asm.AsmUtils.TinyMethod;
 import static squiddev.ccstudio.core.asm.AsmUtils.constantOpcode;
 
-public class JavaBuilder {
+public class JavaBuilderRewrite {
 
 	private static final String TYPE_LOCALUPVALUE = Type.getDescriptor(LuaValue[].class);
 	private static final String TYPE_LUAVALUE = Type.getDescriptor(LuaValue.class);
@@ -205,7 +205,7 @@ public class JavaBuilder {
 	 */
 	private int pc = 0;
 
-	public JavaBuilder(ProtoInfo pi, String className, String filename) {
+	public JavaBuilderRewrite(ProtoInfo pi, String className, String filename) {
 		this.pi = pi;
 		this.p = pi.prototype;
 

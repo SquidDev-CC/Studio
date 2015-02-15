@@ -7,7 +7,7 @@ import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.ZeroArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.luajc.LuaJCWorking;
+import org.luaj.vm2.luajc.LuaJCRewrite;
 import squiddev.ccstudio.computer.Computer;
 import squiddev.ccstudio.computer.api.BitAPI;
 import squiddev.ccstudio.core.Config;
@@ -92,7 +92,7 @@ public class PerformanceRunner {
 
 	public static void testLuaJC() {
 		LuaTable globals = getGlobals();
-		LuaJCWorking.install();
+		LuaJCRewrite.install();
 
 		System.out.print("LuaJC" + (QUIET ? "\t" : "\n"));
 		execute(globals);
