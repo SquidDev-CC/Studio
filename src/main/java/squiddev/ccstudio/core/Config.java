@@ -7,7 +7,7 @@ public class Config {
 	/**
 	 * Verify ASM sources
 	 */
-	public static boolean verifySources = true;
+	public static boolean verifySources = false;
 
 	/**
 	 * Support using the LuaJC compiler

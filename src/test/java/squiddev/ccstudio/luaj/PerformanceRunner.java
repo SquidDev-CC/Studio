@@ -27,7 +27,7 @@ import java.util.Queue;
 public class PerformanceRunner {
 	public static boolean QUIET = true;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		int times = 5;
 		boolean luaC = true;
 		boolean luaJC = true;
@@ -60,8 +60,12 @@ public class PerformanceRunner {
 						QUIET = false;
 						break;
 					case "q":
-					case "--quiet":
+					case "quiet":
 						QUIET = true;
+						break;
+					case "p":
+					case "prompt":
+						System.in.read();
 						break;
 					default:
 						System.out.print(
@@ -70,8 +74,10 @@ public class PerformanceRunner {
 								"  -j|--luajc          Don't run LuaJC\n" +
 								"  -l|--luac           Don't run LuaC\n" +
 								"  -v|--verbose        Verbose output\n" +
-								"  -q|--quiet          Quiet output\n"
+								"  -q|--quiet          Quiet output\n" +
+								"  -p|--prompt         Prompt to begin\n"
 						);
+						return;
 				}
 			}
 		}

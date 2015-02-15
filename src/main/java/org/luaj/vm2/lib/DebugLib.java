@@ -53,7 +53,6 @@ import org.luaj.vm2.luajc.IGetSource;
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.9">http://www.lua.org/manual/5.1/manual.html#5.9</a>
  */
 public class DebugLib extends VarArgFunction {
-	public static final boolean CALLS = (null != System.getProperty("CALLS"));
 	public static final boolean TRACE = (null != System.getProperty("TRACE"));
 
 	// leave this unset to allow obfuscators to
@@ -289,21 +288,26 @@ public class DebugLib extends VarArgFunction {
 		}
 
 		public DebugInfo pushInfo(int calls) {
-			while (debugCalls < calls) {
+			int dCalls = debugCalls;
+			while (dCalls < calls) {
 				nextInfo();
-				++debugCalls;
+				++dCalls;
 			}
-			return debugInfo[debugCalls - 1];
+			debugCalls = dCalls;
+			return debugInfo[dCalls - 1];
 		}
 
 		public void popInfo(int calls) {
-			while (debugCalls > calls)
-				debugInfo[--debugCalls].clear();
+			int dCalls = debugCalls;
+			DebugInfo[] dInfo = debugInfo;
+			while (dCalls > calls) {
+				dInfo[--dCalls].clear();
+			}
+			debugCalls = dCalls;
 		}
 
 		void callHookFunc(DebugState ds, LuaString type, LuaValue arg) {
-			if (inhook || hookfunc == null)
-				return;
+			if (inhook || hookfunc == null) return;
 			inhook = true;
 			try {
 				int n = debugCalls;
@@ -358,9 +362,8 @@ public class DebugLib extends VarArgFunction {
 	}
 
 	static DebugState getDebugState(LuaThread thread) {
-		if (thread.debugState == null)
-			thread.debugState = new DebugState(thread);
-		return (DebugState) thread.debugState;
+		Object state = thread.debugState;
+		return (DebugState) (state == null ? thread.debugState = new DebugState(thread) : state);
 	}
 
 	static DebugState getDebugState() {
@@ -372,8 +375,7 @@ public class DebugLib extends VarArgFunction {
 	 */
 	public static void debugSetupCall(Varargs args, LuaValue[] stack) {
 		DebugState ds = getDebugState();
-		if (ds.inhook)
-			return;
+		if (ds.inhook) return;
 		ds.nextInfo().setargs(args, stack);
 	}
 
@@ -385,14 +387,11 @@ public class DebugLib extends VarArgFunction {
 	 * @param func   the function called
 	 */
 	public static void debugOnCall(LuaThread thread, int calls, LuaFunction func) {
-		DebugState ds = getDebugState();
-		if (ds.inhook)
-			return;
+		DebugState ds = getDebugState(thread);
+		if (ds.inhook) return;
 		DebugInfo di = ds.pushInfo(calls);
 		di.setfunction(func);
-		if (CALLS) System.out.println("calling " + func);
-		if (ds.hookcall)
-			ds.callHookFunc(ds, CALL, LuaValue.NIL);
+		if (ds.hookcall) ds.callHookFunc(ds, CALL, LuaValue.NIL);
 	}
 
 	/**
@@ -403,14 +402,11 @@ public class DebugLib extends VarArgFunction {
 	 */
 	public static void debugOnReturn(LuaThread thread, int calls) {
 		DebugState ds = getDebugState(thread);
-		if (ds.inhook)
-			return;
-		if (CALLS) System.out.println("returning");
+		if (ds.inhook) return;
 		try {
-			if (ds.hookrtrn)
-				ds.callHookFunc(ds, RETURN, LuaValue.NIL);
+			if (ds.hookrtrn) ds.callHookFunc(ds, RETURN, LuaValue.NIL);
 		} finally {
-			getDebugState().popInfo(calls);
+			ds.popInfo(calls);
 		}
 	}
 
