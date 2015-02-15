@@ -23,7 +23,7 @@ package org.luaj.vm2.luajc;
 
 import org.luaj.vm2.Lua;
 import org.luaj.vm2.Prototype;
-import squidev.ccstudio.core.asm.AsmUtils;
+import squiddev.ccstudio.core.asm.AsmUtils;
 
 public class JavaGen {
 

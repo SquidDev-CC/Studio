@@ -28,7 +28,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
-import squidev.ccstudio.core.asm.LuaClassWriter;
+import squiddev.ccstudio.core.asm.LuaClassWriter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,8 +36,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.objectweb.asm.Opcodes.*;
-import static squidev.ccstudio.core.asm.AsmUtils.TinyMethod;
-import static squidev.ccstudio.core.asm.AsmUtils.constantOpcode;
+import static squiddev.ccstudio.core.asm.AsmUtils.TinyMethod;
+import static squiddev.ccstudio.core.asm.AsmUtils.constantOpcode;
 
 public class JavaBuilder {
 

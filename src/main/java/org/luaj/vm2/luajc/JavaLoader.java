@@ -3,7 +3,7 @@ package org.luaj.vm2.luajc;
 import org.luaj.vm2.LuaFunction;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Prototype;
-import squidev.ccstudio.core.Config;
+import squiddev.ccstudio.core.Config;
 
 import java.util.HashMap;
 import java.util.Map;
