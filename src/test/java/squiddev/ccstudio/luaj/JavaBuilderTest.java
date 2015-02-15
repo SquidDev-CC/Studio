@@ -32,6 +32,7 @@ public class JavaBuilderTest {
 			{"Recursive"},
 			{"Error"},
 			{"BranchUpvalue"},
+			{"RecursiveTrace"},
 		};
 
 		return Arrays.asList(tests);
