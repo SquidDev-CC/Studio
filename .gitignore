@@ -102,6 +102,13 @@ local.properties
 .texlipse
 
 ##############
+# NetBeans
+##############
+/nbproject
+build.xml
+manifest.mf
+
+##############
 # Custom
 ##############
 docs/
@@ -110,3 +117,5 @@ docs/
 /build
 !gradle-wrapper.jar
 /lib
+
+/dist/
