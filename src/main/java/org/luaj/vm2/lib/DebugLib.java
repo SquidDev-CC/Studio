@@ -281,20 +281,25 @@ public class DebugLib extends VarArgFunction {
 		}
 
 		public DebugInfo nextInfo() {
-			DebugInfo di = debugInfo[debugCalls];
-			if (di == null)
-				debugInfo[debugCalls] = di = new DebugInfo();
+			int dCalls = debugCalls;
+			DebugInfo[] info = debugInfo;
+
+			DebugInfo di = info[dCalls];
+			if (di == null) info[dCalls] = di = new DebugInfo();
 			return di;
 		}
 
 		public DebugInfo pushInfo(int calls) {
 			int dCalls = debugCalls;
-			while (dCalls < calls) {
-				nextInfo();
-				++dCalls;
+			DebugInfo[] dInfo = debugInfo;
+
+			while(dCalls < calls) {
+				if(dInfo[dCalls] == null) dInfo[dCalls] = new DebugInfo();
+				dCalls++;
 			}
+
 			debugCalls = dCalls;
-			return debugInfo[dCalls - 1];
+			return dInfo[dCalls - 1];
 		}
 
 		public void popInfo(int calls) {

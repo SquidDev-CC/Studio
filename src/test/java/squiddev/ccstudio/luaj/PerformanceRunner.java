@@ -45,7 +45,9 @@ public class PerformanceRunner {
 				switch (next) {
 					case "t":
 					case "times":
-						times = Integer.getInteger(arg.poll());
+						String number = arg.poll();
+						if (number == null) throw new IllegalArgumentException();
+						times = Integer.parseInt(number);
 						break;
 					case "j":
 					case "luajc":
@@ -83,6 +85,8 @@ public class PerformanceRunner {
 		}
 
 		for (int i = 0; i < times; i++) {
+			System.out.println("Iteration " + (i + 1) + "/" + times);
+
 			if (luaC) testLuaC();
 			if (luaJC) testLuaJC();
 		}
