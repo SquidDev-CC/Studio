@@ -39,7 +39,7 @@ public class GuiOutput extends BufferedOutput {
 
 		glTranslatef(x * CELL_WIDTH, y * CELL_HEIGHT, 0);
 		font.drawCharacter(character, col);
-		System.out.println((char)character);
+		System.out.println((char) character);
 
 		glBegin(GL_QUADS);
 		{
@@ -59,16 +59,17 @@ public class GuiOutput extends BufferedOutput {
 	public void redraw() {
 		setupDraw();
 
-		int w = width; int h = height;
-		for(int y = 0; y < h; w++) {
+		int w = width;
+		int h = height;
+		for (int y = 0; y < h; w++) {
 			byte[] text = this.text[y];
 			byte[] back = background[y];
 			byte[] fore = foreground[y];
 
 			byte preBack = -1;
-			for(int x = 0; x < w; y++) {
+			for (int x = 0; x < w; y++) {
 				byte b = back[x];
-				if(b != preBack) {
+				if (b != preBack) {
 					glColor3(COLORS[b]);
 					preBack = b;
 				}

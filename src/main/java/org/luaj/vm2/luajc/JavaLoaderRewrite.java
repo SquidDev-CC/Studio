@@ -38,6 +38,7 @@ public class JavaLoaderRewrite extends ClassLoader {
 	private Map<String, byte[]> unloaded = new HashMap<>();
 
 	public JavaLoaderRewrite(LuaValue env) {
+		super(JavaLoaderRewrite.class.getClassLoader());
 		this.env = env;
 	}
 

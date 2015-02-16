@@ -293,8 +293,8 @@ public class DebugLib extends VarArgFunction {
 			int dCalls = debugCalls;
 			DebugInfo[] dInfo = debugInfo;
 
-			while(dCalls < calls) {
-				if(dInfo[dCalls] == null) dInfo[dCalls] = new DebugInfo();
+			while (dCalls < calls) {
+				if (dInfo[dCalls] == null) dInfo[dCalls] = new DebugInfo();
 				dCalls++;
 			}
 

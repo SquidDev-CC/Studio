@@ -93,9 +93,9 @@ public class GuiOutputMain {
 
 		// Center our window
 		glfwSetWindowPos(
-				window,
-				(GLFWvidmode.width(videoMode) - width) / 2,
-				(GLFWvidmode.height(videoMode) - height) / 2
+			window,
+			(GLFWvidmode.width(videoMode) - width) / 2,
+			(GLFWvidmode.height(videoMode) - height) / 2
 		);
 
 		// Make the OpenGL context current
