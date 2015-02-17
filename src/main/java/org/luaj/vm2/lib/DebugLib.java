@@ -178,7 +178,7 @@ public class DebugLib extends VarArgFunction {
 	// Each thread will get a DebugState attached to it by the debug library
 	// which will track function calls, hook functions, etc.
 	//
-	static class DebugInfo {
+	public static class DebugInfo {
 		LuaValue func;
 		LuaClosure closure;
 		IGetSource getSource;
@@ -267,7 +267,7 @@ public class DebugLib extends VarArgFunction {
 	/**
 	 * DebugState is associated with a Thread
 	 */
-	static class DebugState {
+	public static class DebugState {
 		private final LuaThread thread;
 		private int debugCalls = 0;
 		private DebugInfo[] debugInfo = new DebugInfo[LuaThread.MAX_CALLSTACK + 1];
@@ -338,7 +338,7 @@ public class DebugLib extends VarArgFunction {
 			this.hookfunc = func;
 		}
 
-		DebugInfo getDebugInfo() {
+		public DebugInfo getDebugInfo() {
 			try {
 				return debugInfo[debugCalls - 1];
 			} catch (Throwable t) {
@@ -348,7 +348,7 @@ public class DebugLib extends VarArgFunction {
 			}
 		}
 
-		DebugInfo getDebugInfo(int level) {
+		public DebugInfo getDebugInfo(int level) {
 			return level < 0 || level >= debugCalls ? null : debugInfo[debugCalls - level - 1];
 		}
 
@@ -366,12 +366,12 @@ public class DebugLib extends VarArgFunction {
 		}
 	}
 
-	static DebugState getDebugState(LuaThread thread) {
+	public static DebugState getDebugState(LuaThread thread) {
 		Object state = thread.debugState;
 		return (DebugState) (state == null ? thread.debugState = new DebugState(thread) : state);
 	}
 
-	static DebugState getDebugState() {
+	public static DebugState getDebugState() {
 		return getDebugState(LuaThread.getRunning());
 	}
 

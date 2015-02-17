@@ -1,4 +1,4 @@
-local n = 1000
+local n = 1 --000
 
 local key = util.getRandomData(16)
 local keySched = aes.expandEncryptionKey(key)

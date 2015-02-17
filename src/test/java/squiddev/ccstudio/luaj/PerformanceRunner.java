@@ -108,7 +108,7 @@ public class PerformanceRunner {
 		execute(globals);
 	}
 
-	protected static LuaTable getGlobals() {
+	public static LuaTable getGlobals() {
 		LuaTable globals = JsePlatform.debugGlobals();
 
 		APIClassLoader loader = new APIClassLoader();
