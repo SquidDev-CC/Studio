@@ -1,13 +1,10 @@
 package squiddev.ccstudio.output.lwjgl;
 
-import org.lwjgl.Sys;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWvidmode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GLContext;
-import squiddev.ccstudio.computer.Computer;
-import squiddev.ccstudio.core.Config;
 import squiddev.ccstudio.output.IOutput;
 
 import java.io.File;
@@ -31,8 +28,6 @@ public class GuiOutputMain {
 	protected int height;
 
 	public void run() {
-		System.out.println("Hello LWJGL " + Sys.getVersion() + "!");
-
 		try {
 			init();
 			loop();
@@ -56,17 +51,13 @@ public class GuiOutputMain {
 		// Initialize GLFW. Most GLFW functions will not work before doing this.
 		if (glfwInit() != GL11.GL_TRUE) throw new IllegalStateException("Unable to initialize GLFW");
 
-		/*
-			Setup a window, we want it to be hidden whilst we set things
-			up
-		 */
+		// Setup a window, we want it to be hidden whilst we set things up
 		glfwDefaultWindowHints();
 		glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
 		glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
 		width = IOutput.WIDTH * 12;
 		height = IOutput.HEIGHT * 18;
-
 
 		String label = "Meh";
 		// String label = computer.environment.label;
@@ -93,9 +84,9 @@ public class GuiOutputMain {
 
 		// Center our window
 		glfwSetWindowPos(
-			window,
-			(GLFWvidmode.width(videoMode) - width) / 2,
-			(GLFWvidmode.height(videoMode) - height) / 2
+				window,
+				(GLFWvidmode.width(videoMode) - width) / 2,
+				(GLFWvidmode.height(videoMode) - height) / 2
 		);
 
 		// Make the OpenGL context current
@@ -116,6 +107,7 @@ public class GuiOutputMain {
 
 		glOrtho(0, width, height, 0, 0, 1); // Because top-left is nicer
 		glViewport(0, 0, width, height);
+//		glOrtho(0, width, 0, height, 1, -1);
 
 		glMatrixMode(GL_MODELVIEW);
 
@@ -126,12 +118,23 @@ public class GuiOutputMain {
 		// Run the rendering loop until the user has attempted to close
 		// the window or has pressed the ESCAPE key.
 		GuiOutput output = new GuiOutput();
-		Computer computer = new Computer(new Config(), output);
-		computer.start();
+		output.setConfig(output.getDefaults());
+		output.setBackColor(2);
+		output.clear();
+		output.setBackColor(1);
+		output.write("HELLO".getBytes());
+//		Computer computer = new Computer(new Config(), output);
+//		computer.start();
 
 		while (glfwWindowShouldClose(window) == GL_FALSE) {
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glMatrixMode(GL_MODELVIEW);
+			glLoadIdentity();
+
 			output.redraw();
-			glfwSwapBuffers(window); // swap the color buffers
+
+			glfwSwapBuffers(window); // swap the color buffers*/
+
 			glfwPollEvents();
 		}
 	}

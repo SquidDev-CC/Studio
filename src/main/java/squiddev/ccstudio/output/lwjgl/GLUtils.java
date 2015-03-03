@@ -1,16 +1,27 @@
 package squiddev.ccstudio.output.lwjgl;
 
-import java.nio.FloatBuffer;
-
+import static org.lwjgl.opengl.GL11.glColor3b;
 /**
  * Utils for the nuisance that is OpenGL
  */
 public class GLUtils {
-	public static FloatBuffer createColor(int r, int g, int b) {
-		return FloatBuffer.wrap(new float[]{
-			(float) r / 255,
-			(float) g / 255,
-			(float) b / 255
-		});
+	public static class Color {
+		protected final byte r;
+		protected final byte g;
+		protected final byte b;
+
+		public Color(byte r, byte g, byte b) {
+			this.r = r;
+			this.g = g;
+			this.b = b;
+		}
+
+		public Color(int r, int g, int b) {
+			this((byte) r, (byte) g, (byte) b);
+		}
+
+		public void use() {
+			glColor3b(r, g, b);
+		}
 	}
 }

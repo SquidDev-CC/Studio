@@ -94,18 +94,18 @@ public class TextureLoader {
 	public TextureLoader(String base) {
 		this.base = base;
 		glAlphaColorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
-			new int[]{8, 8, 8, 8},
-			true,
-			false,
-			ComponentColorModel.TRANSLUCENT,
-			DataBuffer.TYPE_BYTE);
+				new int[]{8, 8, 8, 8},
+				true,
+				false,
+				ComponentColorModel.TRANSLUCENT,
+				DataBuffer.TYPE_BYTE);
 
 		glColorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
-			new int[]{8, 8, 8, 0},
-			false,
-			false,
-			ComponentColorModel.OPAQUE,
-			DataBuffer.TYPE_BYTE);
+				new int[]{8, 8, 8, 0},
+				false,
+				false,
+				ComponentColorModel.OPAQUE,
+				DataBuffer.TYPE_BYTE);
 	}
 
 	/**
@@ -133,10 +133,10 @@ public class TextureLoader {
 		}
 
 		tex = getTexture(resourceName,
-			GL_TEXTURE_2D, // target
-			GL_RGBA,     // dst pixel format
-			GL_LINEAR, // min filter (unused)
-			GL_LINEAR);
+				GL_TEXTURE_2D, // target
+				GL_RGBA,     // dst pixel format
+				GL_LINEAR, // min filter (unused)
+				GL_LINEAR);
 
 		table.put(resourceName, tex);
 
@@ -156,10 +156,10 @@ public class TextureLoader {
 	 * @throws IOException Indicates a failure to access the resource
 	 */
 	public Texture getTexture(String resourceName,
-	                          int target,
-	                          int dstPixelFormat,
-	                          int minFilter,
-	                          int magFilter) throws IOException {
+							  int target,
+							  int dstPixelFormat,
+							  int minFilter,
+							  int magFilter) throws IOException {
 		int srcPixelFormat;
 
 		// create the texture ID for this texture
@@ -189,14 +189,14 @@ public class TextureLoader {
 
 		// produce a texture from the byte buffer
 		glTexImage2D(target,
-			0,
-			dstPixelFormat,
-			get2Fold(bufferedImage.getWidth()),
-			get2Fold(bufferedImage.getHeight()),
-			0,
-			srcPixelFormat,
-			GL_UNSIGNED_BYTE,
-			textureBuffer);
+				0,
+				dstPixelFormat,
+				get2Fold(bufferedImage.getWidth()),
+				get2Fold(bufferedImage.getHeight()),
+				0,
+				srcPixelFormat,
+				GL_UNSIGNED_BYTE,
+				textureBuffer);
 
 		return texture;
 	}

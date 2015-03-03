@@ -40,7 +40,7 @@ public class BufferedOutput implements IOutput {
 		System.arraycopy(msg, 0, text[y], x, l);
 
 		// Fill in the values
-		int last = x + l + 1;
+		int last = x + l;
 		Arrays.fill(background[y], x, last, currentBackground);
 		Arrays.fill(foreground[y], x, last, currentForeground);
 	}
