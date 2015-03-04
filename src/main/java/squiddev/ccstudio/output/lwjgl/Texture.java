@@ -33,6 +33,7 @@
 package squiddev.ccstudio.output.lwjgl;
 
 import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL11.glTexCoord2f;
 
 /**
  * A texture to be bound within OpenGL. This object is responsible for
@@ -43,51 +44,38 @@ import static org.lwjgl.opengl.GL11.glBindTexture;
  * considerably bigged that the source image and hence the texture
  * mapping coordinates need to be adjusted to matchup drawing the
  * sprite against the texture.
- *
- * @author Kevin Glass
- * @author Brian Matzon
  */
 public class Texture {
 
 	/**
 	 * The GL target type
 	 */
-	private int target;
+	private final int target;
 
 	/**
 	 * The GL texture ID
 	 */
-	private int textureID;
+	private final int textureID;
 
 	/**
 	 * The height of the image
 	 */
-	private int height;
+	private final int height;
 
 	/**
 	 * The width of the image
 	 */
-	private int width;
-
-	/**
-	 * The width of the texture
-	 */
-	private int texWidth;
-
-	/**
-	 * The height of the texture
-	 */
-	private int texHeight;
+	private final int width;
 
 	/**
 	 * The ratio of the width of the image to the texture
 	 */
-	private float widthRatio;
+	private final float widthRatio;
 
 	/**
 	 * The ratio of the height of the image to the texture
 	 */
-	private float heightRatio;
+	private final float heightRatio;
 
 	/**
 	 * Create a new texture
@@ -95,9 +83,15 @@ public class Texture {
 	 * @param target    The GL target
 	 * @param textureID The GL texture ID
 	 */
-	public Texture(int target, int textureID) {
+	public Texture(int target, int textureID, int width, int height) {
 		this.target = target;
 		this.textureID = textureID;
+
+		this.width = width;
+		this.height = height;
+
+		this.widthRatio = 1.0f / width;
+		this.heightRatio = 1.0f / height;
 	}
 
 	/**
@@ -107,24 +101,8 @@ public class Texture {
 		glBindTexture(target, textureID);
 	}
 
-	/**
-	 * Set the height of the image
-	 *
-	 * @param height The height of the image
-	 */
-	public void setHeight(int height) {
-		this.height = height;
-		setHeight();
-	}
-
-	/**
-	 * Set the width of the image
-	 *
-	 * @param width The width of the image
-	 */
-	public void setWidth(int width) {
-		this.width = width;
-		setWidth();
+	public void bindCoords(int x, int y) {
+		glTexCoord2f(x * widthRatio, y * heightRatio);
 	}
 
 	/**
@@ -146,60 +124,20 @@ public class Texture {
 	}
 
 	/**
-	 * Get the height of the physical texture
+	 * Get the height ratio
 	 *
 	 * @return The height of physical texture
 	 */
-	public float getHeight() {
+	public float getHeightRatio() {
 		return heightRatio;
 	}
 
 	/**
-	 * Get the width of the physical texture
+	 * Get the width ratio
 	 *
 	 * @return The width of physical texture
 	 */
 	public float getWidth() {
 		return widthRatio;
-	}
-
-	/**
-	 * Set the height of this texture
-	 *
-	 * @param texHeight The height of the texture
-	 */
-	public void setTextureHeight(int texHeight) {
-		this.texHeight = texHeight;
-		setHeight();
-	}
-
-	/**
-	 * Set the width of this texture
-	 *
-	 * @param texWidth The width of the texture
-	 */
-	public void setTextureWidth(int texWidth) {
-		this.texWidth = texWidth;
-		setWidth();
-	}
-
-	/**
-	 * Set the height of the texture. This will update the
-	 * ratio also.
-	 */
-	private void setHeight() {
-		if (texHeight != 0) {
-			heightRatio = ((float) height) / texHeight;
-		}
-	}
-
-	/**
-	 * Set the width of the texture. This will update the
-	 * ratio also.
-	 */
-	private void setWidth() {
-		if (texWidth != 0) {
-			widthRatio = ((float) width) / texWidth;
-		}
 	}
 }

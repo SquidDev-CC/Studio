@@ -102,27 +102,30 @@ public class GuiOutputMain {
 	}
 
 	private void loop() {
+		glEnable(GL_TEXTURE_2D);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+		glShadeModel(GL_SMOOTH);
+
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
 
 		glOrtho(0, width, height, 0, 0, 1); // Because top-left is nicer
 		glViewport(0, 0, width, height);
-//		glOrtho(0, width, 0, height, 1, -1);
 
 		glMatrixMode(GL_MODELVIEW);
 
 		// Set the clear color
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
 		// Run the rendering loop until the user has attempted to close
 		// the window or has pressed the ESCAPE key.
 		GuiOutput output = new GuiOutput();
 		output.setConfig(output.getDefaults());
-		output.setBackColor(2);
-		output.clear();
-		output.setBackColor(1);
-		output.write("HELLO".getBytes());
+		output.write("THINGS".getBytes());
+		output.setCursor(1, 1);
+		output.setBackColor(3);
+		output.clearLine();
 //		Computer computer = new Computer(new Config(), output);
 //		computer.start();
 

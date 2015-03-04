@@ -53,13 +53,7 @@ public class GuiOutput extends BufferedOutput {
 		glPopMatrix();
 	}
 
-	protected void setupDraw() {
-		font.texture.bind();
-	}
-
 	public void redraw() {
-		setupDraw();
-
 		int w = width;
 		int h = height;
 		for (int y = 0; y < h; y++) {
@@ -92,7 +86,6 @@ public class GuiOutput extends BufferedOutput {
 			int y = cursorY;
 			int col = currentForeground;
 
-			setupDraw();
 			COLORS[currentBackground].use();
 
 			for (byte b : msg) {
