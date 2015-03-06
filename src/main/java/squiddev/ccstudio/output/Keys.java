@@ -120,7 +120,7 @@ public class Keys {
 		put(262, 205); // Right
 
 		put(269, 207); // End
-		put(264); // Down4
+		put(264);
 		put(267); // Page down
 		put(260); // Insert
 		put(261); // Delete

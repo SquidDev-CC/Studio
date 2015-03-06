@@ -56,12 +56,13 @@ public class GuiOutput extends BufferedOutput {
 	public void redraw() {
 		int w = width;
 		int h = height;
+
+		byte previousBackground = -1;
 		for (int y = 0; y < h; y++) {
 			byte[] text = this.text[y];
 			byte[] back = background[y];
 			byte[] fore = foreground[y];
 
-			byte previousBackground = -1;
 			for (int x = 0; x < w; x++) {
 				byte background = back[x];
 				if (background != previousBackground) {

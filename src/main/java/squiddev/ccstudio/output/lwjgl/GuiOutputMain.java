@@ -124,7 +124,7 @@ public class GuiOutputMain {
 				if (button >= 0 && button <= 3) {
 					mouseDown[button] = down == 1;
 					if (down == 1) {
-						computer.queueEvent("mouse_down", LuaValue.varargsOf(LuaValue.valueOf(button + 1), LuaValue.valueOf(xPos), LuaValue.valueOf(yPos)));
+						computer.queueEvent("mouse_click", LuaValue.varargsOf(LuaValue.valueOf(button + 1), LuaValue.valueOf(xPos), LuaValue.valueOf(yPos)));
 					}
 				}
 			}
@@ -184,40 +184,25 @@ public class GuiOutputMain {
 			{
 				// Buffers for mouse x and y
 
+				DoubleBuffer xBuffer = BufferUtils.createDoubleBuffer(1);
+				DoubleBuffer yBuffer = BufferUtils.createDoubleBuffer(1);
+
+				glfwGetCursorPos(window, xBuffer, yBuffer);
+				xBuffer.rewind();
+				yBuffer.rewind();
+				int x = (int) (xBuffer.get() / width * 51) + 1;
+				int y = (int) (yBuffer.get() / height * 19) + 1;
+
+				boolean changed = x != xPos || y != yPos;
+				xPos = x;
+				yPos = y;
+
 				boolean[] mouse = mouseDown;
-				boolean setPosition = false;
-				boolean changed = false;
 				for (int i = 0; i < 3; i++) {
-					if (mouse[i]) {
-						if (!setPosition) {
-							setPosition = true;
-							DoubleBuffer xBuffer = BufferUtils.createDoubleBuffer(1);
-							DoubleBuffer yBuffer = BufferUtils.createDoubleBuffer(1);
-
-							glfwGetCursorPos(window, xBuffer, yBuffer);
-							xBuffer.rewind();
-							yBuffer.rewind();
-							int x = (int) (xBuffer.get() / width * 51) + 1;
-							int y = (int) (yBuffer.get() / height * 19) + 1;
-
-							if (x != xPos || y != yPos) {
-								changed = true;
-								xPos = x;
-								yPos = y;
-							}
-						}
-
-						if (changed) {
-							computer.queueEvent("mouse_drag", LuaValue.varargsOf(LuaValue.valueOf(i + 1), LuaValue.valueOf(xPos), LuaValue.valueOf(yPos)));
-						}
+					if (mouse[i] && changed) {
+						computer.queueEvent("mouse_drag", LuaValue.varargsOf(LuaValue.valueOf(i + 1), LuaValue.valueOf(xPos), LuaValue.valueOf(yPos)));
 					}
 				}
-
-				if (!setPosition) {
-					xPos = -1;
-					yPos = -1;
-				}
-
 			}
 
 			output.redraw();
