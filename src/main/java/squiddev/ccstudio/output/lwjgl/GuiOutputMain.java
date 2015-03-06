@@ -1,5 +1,7 @@
 package squiddev.ccstudio.output.lwjgl;
 
+import org.luaj.vm2.LuaValue;
+import org.lwjgl.glfw.GLFWCharCallback;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWvidmode;
@@ -8,6 +10,7 @@ import org.lwjgl.opengl.GLContext;
 import squiddev.ccstudio.computer.Computer;
 import squiddev.ccstudio.core.Config;
 import squiddev.ccstudio.output.IOutput;
+import squiddev.ccstudio.output.Keys;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -22,12 +25,15 @@ public class GuiOutputMain {
 	// We need to strongly reference callback instances. Because this isn't stupid or anything
 	private GLFWErrorCallback errorCallback;
 	private GLFWKeyCallback keyCallback;
+	private GLFWCharCallback charCallback;
 
 	// The window handle
 	private long window;
 
 	protected int width;
 	protected int height;
+
+	protected Computer computer;
 
 	public void run() {
 		try {
@@ -38,6 +44,8 @@ public class GuiOutputMain {
 			glfwDestroyWindow(window);
 
 			keyCallback.release();
+			charCallback.release();
+			if (computer != null) computer.shutdown(true);
 		} finally {
 			// Terminate GLFW and release the GLFWerrorfun
 			glfwTerminate();
@@ -70,13 +78,33 @@ public class GuiOutputMain {
 		if (window == NULL) throw new RuntimeException("Failed to create the GLFW window");
 
 		// Setup a key callback. It will be called every time a key is pressed, repeated or released.
+		Keys k = new Keys();
 		glfwSetKeyCallback(window, keyCallback = new GLFWKeyCallback() {
 			@Override
 			public void invoke(long window, int key, int scancode, int action, int mods) {
 				if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
 					glfwSetWindowShouldClose(window, GL_TRUE); // We will detect this in our rendering loop
 				} else {
-					System.out.println(key + " " + scancode + " " + action + " " + mods);
+					// We only should queue an event if it is a press or a repeat
+					if (computer != null && action > 0) {
+						System.out.println(key + " " + scancode + " " + action + " " + mods);
+
+						Integer code = k.keys.get(key);
+						if (code != null) computer.queueEvent("key", LuaValue.valueOf(code));
+					}
+				}
+			}
+		});
+
+		glfwSetCharCallback(window, charCallback = new GLFWCharCallback() {
+			@Override
+			public void invoke(long window, int key) {
+
+				if (computer != null) {
+					char letter = (char) key;
+					if (letter >= ' ' && letter <= '~') {
+						computer.queueEvent("char", LuaValue.valueOf(Character.toString(letter)));
+					}
 				}
 			}
 		});
@@ -120,13 +148,13 @@ public class GuiOutputMain {
 		glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
-		// Run the rendering loop until the user has attempted to close
-		// the window or has pressed the ESCAPE key.
 		GuiOutput output = new GuiOutput();
 		output.setConfig(output.getDefaults());
-		Computer computer = new Computer(new Config(), output);
+		computer = new Computer(new Config(), output);
 		computer.start();
 
+		// Run the rendering loop until the user has attempted to close
+		// the window or has pressed the ESCAPE key.
 		while (glfwWindowShouldClose(window) == GL_FALSE) {
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glMatrixMode(GL_MODELVIEW);

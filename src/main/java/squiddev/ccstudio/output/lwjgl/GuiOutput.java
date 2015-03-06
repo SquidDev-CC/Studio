@@ -97,16 +97,6 @@ public class GuiOutput extends BufferedOutput {
 	}
 
 	/**
-	 * Set if the cursor should blink
-	 *
-	 * @param blink Set to true to make the cursor blink
-	 */
-	@Override
-	public void setBlink(boolean blink) {
-
-	}
-
-	/**
 	 * Scroll the output
 	 *
 	 * @param amount Positive number to scroll downwards, negative to scroll up
