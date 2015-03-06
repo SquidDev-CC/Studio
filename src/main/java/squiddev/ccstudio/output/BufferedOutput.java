@@ -41,8 +41,8 @@ public class BufferedOutput implements IOutput {
 
 		// Fill in the values
 		int last = x + l;
-		Arrays.fill(background[y], x, last, currentBackground);
-		Arrays.fill(foreground[y], x, last, currentForeground);
+		Arrays.fill(background[y], x, last, BLACK);
+		Arrays.fill(foreground[y], x, last, WHITE);
 	}
 
 	/**

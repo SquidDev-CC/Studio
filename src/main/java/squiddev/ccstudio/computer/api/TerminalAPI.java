@@ -57,7 +57,7 @@ public class TerminalAPI {
 				byte character = bytes[i];
 				if (character == '\t') {
 					bytes[i] = ' ';
-				} else if (character <= ' ' || character >= '~') {
+				} else if (character < ' ' || character > '~') {
 					bytes[i] = '?';
 				}
 			}
@@ -128,7 +128,7 @@ public class TerminalAPI {
 		int result = (int) Math.floor(Math.log(color) / Math.log(2));
 
 		if (result < 0 || result > 15) throw new LuaError("Colour out of range");
-		if (!hasColor && color != 0 && color != 15) throw new LuaError("Colour not supported");
+		if (!hasColor && result != 0 && result != 15) throw new LuaError("Colour not supported");
 
 		return result;
 	}

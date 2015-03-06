@@ -32,7 +32,7 @@ public class GuiOutput extends BufferedOutput {
 
 	protected final Font font = new Font();
 
-	public boolean dynamicDraw = true;
+	public boolean dynamicDraw = false;
 
 	protected void drawByte(int x, int y, int col, byte character) {
 		glPushMatrix();

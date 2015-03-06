@@ -5,6 +5,8 @@ import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWvidmode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GLContext;
+import squiddev.ccstudio.computer.Computer;
+import squiddev.ccstudio.core.Config;
 import squiddev.ccstudio.output.IOutput;
 
 import java.io.File;
@@ -122,12 +124,8 @@ public class GuiOutputMain {
 		// the window or has pressed the ESCAPE key.
 		GuiOutput output = new GuiOutput();
 		output.setConfig(output.getDefaults());
-		output.write("THINGS".getBytes());
-		output.setCursor(1, 1);
-		output.setBackColor(3);
-		output.clearLine();
-//		Computer computer = new Computer(new Config(), output);
-//		computer.start();
+		Computer computer = new Computer(new Config(), output);
+		computer.start();
 
 		while (glfwWindowShouldClose(window) == GL_FALSE) {
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
