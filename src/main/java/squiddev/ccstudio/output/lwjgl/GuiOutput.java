@@ -150,15 +150,4 @@ public class GuiOutput extends BufferedOutput {
 			glEnd();
 		}
 	}
-
-
-	/**
-	 * Sets the current config
-	 *
-	 * @param config The config data
-	 */
-	@Override
-	public void setConfig(ITerminalConfig config) {
-		super.setConfig(config);
-	}
 }

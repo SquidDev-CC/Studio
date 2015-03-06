@@ -1,10 +1,8 @@
 package squiddev.ccstudio.output.lwjgl;
 
 import org.luaj.vm2.LuaValue;
-import org.lwjgl.glfw.GLFWCharCallback;
-import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.glfw.GLFWKeyCallback;
-import org.lwjgl.glfw.GLFWvidmode;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GLContext;
 import squiddev.ccstudio.computer.Computer;
@@ -14,6 +12,7 @@ import squiddev.ccstudio.output.Keys;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
 
 import static org.lwjgl.glfw.Callbacks.errorCallbackPrint;
 import static org.lwjgl.glfw.GLFW.*;
@@ -26,6 +25,7 @@ public class GuiOutputMain {
 	private GLFWErrorCallback errorCallback;
 	private GLFWKeyCallback keyCallback;
 	private GLFWCharCallback charCallback;
+	private GLFWMouseButtonCallback mouseButtonCallback;
 
 	// The window handle
 	private long window;
@@ -34,6 +34,10 @@ public class GuiOutputMain {
 	protected int height;
 
 	protected Computer computer;
+
+	protected int xPos = -1;
+	protected int yPos = -1;
+	protected boolean[] mouseDown = new boolean[3];
 
 	public void run() {
 		try {
@@ -45,6 +49,8 @@ public class GuiOutputMain {
 
 			keyCallback.release();
 			charCallback.release();
+			mouseButtonCallback.release();
+
 			if (computer != null) computer.shutdown(true);
 		} finally {
 			// Terminate GLFW and release the GLFWerrorfun
@@ -87,10 +93,13 @@ public class GuiOutputMain {
 				} else {
 					// We only should queue an event if it is a press or a repeat
 					if (computer != null && action > 0) {
-						System.out.println(key + " " + scancode + " " + action + " " + mods);
-
 						Integer code = k.keys.get(key);
-						if (code != null) computer.queueEvent("key", LuaValue.valueOf(code));
+
+						if (code != null) {
+							computer.queueEvent("key", LuaValue.valueOf(code));
+						} else {
+							System.out.println("Unknown key: " + key + " " + scancode + " " + action + " " + mods);
+						}
 					}
 				}
 			}
@@ -104,6 +113,18 @@ public class GuiOutputMain {
 					char letter = (char) key;
 					if (letter >= ' ' && letter <= '~') {
 						computer.queueEvent("char", LuaValue.valueOf(Character.toString(letter)));
+					}
+				}
+			}
+		});
+
+		glfwSetMouseButtonCallback(window, mouseButtonCallback = new GLFWMouseButtonCallback() {
+			@Override
+			public void invoke(long window, int button, int down, int haventAClue) {
+				if (button >= 0 && button <= 3) {
+					mouseDown[button] = down == 1;
+					if (down == 1) {
+						computer.queueEvent("mouse_down", LuaValue.varargsOf(LuaValue.valueOf(button + 1), LuaValue.valueOf(xPos), LuaValue.valueOf(yPos)));
 					}
 				}
 			}
@@ -159,6 +180,45 @@ public class GuiOutputMain {
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glMatrixMode(GL_MODELVIEW);
 			glLoadIdentity();
+
+			{
+				// Buffers for mouse x and y
+
+				boolean[] mouse = mouseDown;
+				boolean setPosition = false;
+				boolean changed = false;
+				for (int i = 0; i < 3; i++) {
+					if (mouse[i]) {
+						if (!setPosition) {
+							setPosition = true;
+							DoubleBuffer xBuffer = BufferUtils.createDoubleBuffer(1);
+							DoubleBuffer yBuffer = BufferUtils.createDoubleBuffer(1);
+
+							glfwGetCursorPos(window, xBuffer, yBuffer);
+							xBuffer.rewind();
+							yBuffer.rewind();
+							int x = (int) (xBuffer.get() / width * 51) + 1;
+							int y = (int) (yBuffer.get() / height * 19) + 1;
+
+							if (x != xPos || y != yPos) {
+								changed = true;
+								xPos = x;
+								yPos = y;
+							}
+						}
+
+						if (changed) {
+							computer.queueEvent("mouse_drag", LuaValue.varargsOf(LuaValue.valueOf(i + 1), LuaValue.valueOf(xPos), LuaValue.valueOf(yPos)));
+						}
+					}
+				}
+
+				if (!setPosition) {
+					xPos = -1;
+					yPos = -1;
+				}
+
+			}
 
 			output.redraw();
 
