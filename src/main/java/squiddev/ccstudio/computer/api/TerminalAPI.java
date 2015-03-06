@@ -121,7 +121,7 @@ public class TerminalAPI {
 
 	@LuaFunction({"setBackgroundColor", "setBackgroundColour"})
 	public void setBackgroundColor(double color) {
-		output.setTextColor(validateColor(color));
+		output.setBackColor(validateColor(color));
 	}
 
 	protected int validateColor(double color) {

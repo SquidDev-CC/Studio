@@ -284,6 +284,9 @@ public class Computer {
 					}
 
 					mainThread.stop(force);
+
+					output.clear();
+					output.setBlink(false);
 				}
 			};
 

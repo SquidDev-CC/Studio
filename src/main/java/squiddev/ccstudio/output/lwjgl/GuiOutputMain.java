@@ -51,7 +51,7 @@ public class GuiOutputMain {
 			charCallback.release();
 			mouseButtonCallback.release();
 
-			if (computer != null) computer.shutdown(true);
+			if (computer != null && computer.isAlive()) computer.shutdown(true);
 		} finally {
 			// Terminate GLFW and release the GLFWerrorfun
 			glfwTerminate();
