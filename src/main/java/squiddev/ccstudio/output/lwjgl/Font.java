@@ -39,7 +39,6 @@ public class Font {
 	protected final int colourHeight;
 
 	public Font() {
-		TextureLoader textureLoader = new TextureLoader();
 		Texture texture = this.texture = TextureLoader.loadTexture("/squiddev/ccstudio/output/lwjgl/font.png");
 
 		/*
@@ -58,7 +57,7 @@ public class Font {
 	 * @param color     The color to use
 	 */
 	public void drawCharacter(byte character, int color) {
-		if (character == ' ' || character == 0) return;
+		if (character <= ' ') return;
 
 		// Get character offsets
 		int xOffset = character % CHARACTERS_PER_LINE;

@@ -34,7 +34,7 @@ public class GuiOutput extends BufferedOutput {
 
 	public boolean dynamicDraw = false;
 
-	protected void drawByte(int x, int y, int col, byte character) {
+	protected void drawByte(int x, int y, int foreground, byte character) {
 		glPushMatrix();
 
 		glTranslatef(x * CELL_WIDTH, y * CELL_HEIGHT, 0);
@@ -48,7 +48,7 @@ public class GuiOutput extends BufferedOutput {
 		}
 		glEnd();
 
-		font.drawCharacter(character, col);
+		font.drawCharacter(character, foreground);
 
 		glPopMatrix();
 	}

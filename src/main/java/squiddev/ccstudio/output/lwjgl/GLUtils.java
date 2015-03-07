@@ -1,6 +1,7 @@
 package squiddev.ccstudio.output.lwjgl;
 
 import static org.lwjgl.opengl.GL11.glColor3b;
+
 /**
  * Utils for the nuisance that is OpenGL
  */
@@ -22,6 +23,11 @@ public class GLUtils {
 
 		public void use() {
 			glColor3b(r, g, b);
+		}
+
+		@Override
+		public String toString() {
+			return "Color{" + r + ", " + g + ", " + b + '}';
 		}
 	}
 }
