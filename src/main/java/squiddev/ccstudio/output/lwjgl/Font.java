@@ -2,8 +2,6 @@ package squiddev.ccstudio.output.lwjgl;
 
 import squiddev.ccstudio.output.IOutput;
 
-import static org.lwjgl.opengl.GL11.*;
-
 /**
  * Handles font drawing
  */
@@ -38,7 +36,20 @@ public class Font {
 	 */
 	protected final int colourHeight;
 
+	/**
+	 * Widths of each character
+	 */
+	protected final int[] characterWidths = {
+		0, 2, 8, 10, 10, 10, 10, 4, 8, 8, 8, 10, 2, 10, 2, 10, 10, 10, 10,
+		10, 10, 10, 10, 10, 10, 10, 2, 2, 8, 10, 8, 10, 12, 10, 10, 10, 10,
+		10, 10, 10, 10, 6, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+		10, 10, 10, 10, 10, 6, 10, 6, 10, 10, 4, 10, 10, 10, 10, 10, 8, 10,
+		10, 2, 10, 8, 4, 10, 10, 10, 10, 10, 10, 10, 6, 10, 10, 10, 10, 10,
+		10, 8, 2, 8, 12, 0
+	};
+
 	public Font() {
+
 		Texture texture = this.texture = TextureLoader.loadTexture("/squiddev/ccstudio/output/lwjgl/font.png");
 
 		/*
@@ -60,30 +71,17 @@ public class Font {
 		if (character <= ' ') return;
 
 		// Get character offsets
-		int xOffset = character % CHARACTERS_PER_LINE;
-		int yOffset = (character - IOutput.FIRST_CHAR) / CHARACTERS_PER_LINE + LINE_Y_OFFSET;
+		int charLoc = character - IOutput.FIRST_CHAR;
+		int xTexture = character % CHARACTERS_PER_LINE;
+		int yTexture = charLoc / CHARACTERS_PER_LINE + LINE_Y_OFFSET;
 
-		xOffset *= charWidth;
-		yOffset *= charHeight;
-		yOffset += (15 - color) * colourHeight;
+		xTexture *= charWidth;
+		yTexture *= charHeight;
+		yTexture += (15 - color) * colourHeight; // We need to invert the color
 
-		Texture texture = this.texture;
-		texture.bind();
+//		int offset = charWidth / 2 - characterWidths[charLoc] / 2 - 1;
+//		if (character == '@' || character  == '~') --offset;
 
-		glBegin(GL_QUADS);
-		{
-			texture.bindCoords(xOffset, yOffset);
-			glVertex2f(0, 0);
-
-			texture.bindCoords(xOffset, yOffset + charHeight);
-			glVertex2f(0, GuiOutput.CELL_HEIGHT);
-
-			texture.bindCoords(xOffset + charHeight, yOffset + charHeight);
-			glVertex2f(GuiOutput.CELL_WIDTH, GuiOutput.CELL_HEIGHT);
-
-			texture.bindCoords(xOffset + charHeight, yOffset);
-			glVertex2f(GuiOutput.CELL_WIDTH, 0);
-		}
-		glEnd();
+		texture.render(xTexture, yTexture, charWidth, charHeight, 0, 0, GuiOutput.CELL_WIDTH, GuiOutput.CELL_HEIGHT);
 	}
 }

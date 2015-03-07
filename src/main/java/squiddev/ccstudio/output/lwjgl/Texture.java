@@ -32,8 +32,7 @@
 
 package squiddev.ccstudio.output.lwjgl;
 
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL11.glTexCoord2f;
+import static org.lwjgl.opengl.GL11.*;
 
 /**
  * A texture to be bound within OpenGL. This object is responsible for
@@ -139,5 +138,37 @@ public class Texture {
 	 */
 	public float getWidth() {
 		return widthRatio;
+	}
+
+	public void render(float imageX, float imageY, float imageWidth, float imageHeight, float x, float y, float width, float height) {
+		bind();
+
+		float wRatio = widthRatio;
+		float hRatio = heightRatio;
+
+		imageWidth = (imageWidth + imageX) * wRatio;
+		imageX *= wRatio;
+		imageHeight = (imageHeight + imageY) * hRatio;
+		imageY *= hRatio;
+
+		width += x;
+		height += y;
+
+
+		glBegin(GL_QUADS);
+		{
+			glTexCoord2f(imageX, imageY);
+			glVertex2f(x, y);
+
+			glTexCoord2f(imageX, imageHeight);
+			glVertex2f(x, height);
+
+			glTexCoord2f(imageWidth, imageHeight);
+			glVertex2f(width, height);
+
+			glTexCoord2f(imageWidth, imageY);
+			glVertex2f(width, y);
+		}
+		glEnd();
 	}
 }

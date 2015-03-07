@@ -1,6 +1,6 @@
 package squiddev.ccstudio.output.lwjgl;
 
-import static org.lwjgl.opengl.GL11.glColor3b;
+import static org.lwjgl.opengl.GL11.glColor3ub;
 
 /**
  * Utils for the nuisance that is OpenGL
@@ -22,7 +22,7 @@ public class GLUtils {
 		}
 
 		public void use() {
-			glColor3b(r, g, b);
+			glColor3ub(r, g, b);
 		}
 
 		@Override

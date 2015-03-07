@@ -26,6 +26,7 @@ public class GuiOutputMain {
 	private GLFWKeyCallback keyCallback;
 	private GLFWCharCallback charCallback;
 	private GLFWMouseButtonCallback mouseButtonCallback;
+	private GLFWScrollCallback scrollCallback;
 
 	// The window handle
 	private long window;
@@ -50,6 +51,7 @@ public class GuiOutputMain {
 			keyCallback.release();
 			charCallback.release();
 			mouseButtonCallback.release();
+			scrollCallback.release();
 
 			if (computer != null && computer.isAlive()) computer.shutdown(true);
 		} finally {
@@ -85,6 +87,28 @@ public class GuiOutputMain {
 
 		// Setup a key callback. It will be called every time a key is pressed, repeated or released.
 		Keys k = new Keys();
+		Actions actions = new Actions();
+		actions.add(new Actions.Action(GLFW_KEY_T, GLFW_MOD_CONTROL) {
+			@Override
+			public void execute(Computer computer) {
+				computer.queueEvent("terminate", LuaValue.NONE);
+			}
+		});
+
+		actions.add(new Actions.Action(GLFW_KEY_S, GLFW_MOD_CONTROL) {
+			@Override
+			public void execute(Computer computer) {
+				if (!computer.isAlive()) computer.shutdown();
+			}
+		});
+
+		actions.add(new Actions.Action(GLFW_KEY_S, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT) {
+			@Override
+			public void execute(Computer computer) {
+				if (!computer.isAlive()) computer.shutdown(true);
+			}
+		});
+
 		glfwSetKeyCallback(window, keyCallback = new GLFWKeyCallback() {
 			@Override
 			public void invoke(long window, int key, int scancode, int action, int mods) {
@@ -92,13 +116,16 @@ public class GuiOutputMain {
 					glfwSetWindowShouldClose(window, GL_TRUE); // We will detect this in our rendering loop
 				} else {
 					// We only should queue an event if it is a press or a repeat
-					if (computer != null && action > 0) {
-						Integer code = k.keys.get(key);
+					if (computer != null) {
+						actions.press(computer, key, mods, action);
+						if (action > 0) {
+							Integer code = k.keys.get(key);
 
-						if (code != null) {
-							computer.queueEvent("key", LuaValue.valueOf(code));
-						} else {
-							System.out.println("Unknown key: " + key + " " + scancode + " " + action + " " + mods);
+							if (code != null) {
+								computer.queueEvent("key", LuaValue.valueOf(code));
+							} else {
+								System.out.println("Unknown key: " + key + " " + scancode + " " + action + " " + mods);
+							}
 						}
 					}
 				}
@@ -120,12 +147,21 @@ public class GuiOutputMain {
 
 		glfwSetMouseButtonCallback(window, mouseButtonCallback = new GLFWMouseButtonCallback() {
 			@Override
-			public void invoke(long window, int button, int down, int haventAClue) {
+			public void invoke(long window, int button, int down, int noClue) {
 				if (button >= 0 && button <= 3) {
 					mouseDown[button] = down == 1;
-					if (down == 1) {
+					if (down == 1 && computer != null) {
 						computer.queueEvent("mouse_click", LuaValue.varargsOf(LuaValue.valueOf(button + 1), LuaValue.valueOf(xPos), LuaValue.valueOf(yPos)));
 					}
+				}
+			}
+		});
+
+		glfwSetScrollCallback(window, scrollCallback = new GLFWScrollCallback() {
+			@Override
+			public void invoke(long window, double noClue, double scrollChange) {
+				if (computer != null) {
+					computer.queueEvent("mouse_scroll", LuaValue.varargsOf(LuaValue.valueOf(-scrollChange), LuaValue.valueOf(xPos), LuaValue.valueOf(yPos)));
 				}
 			}
 		});
@@ -135,9 +171,9 @@ public class GuiOutputMain {
 
 		// Center our window
 		glfwSetWindowPos(
-				window,
-				(GLFWvidmode.width(videoMode) - width) / 2,
-				(GLFWvidmode.height(videoMode) - height) / 2
+			window,
+			(GLFWvidmode.width(videoMode) - width) / 2,
+			(GLFWvidmode.height(videoMode) - height) / 2
 		);
 
 		// Make the OpenGL context current
@@ -155,7 +191,6 @@ public class GuiOutputMain {
 	private void loop() {
 		glEnable(GL_TEXTURE_2D);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-		glShadeModel(GL_SMOOTH);
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();

@@ -12,22 +12,22 @@ public class GuiOutput extends BufferedOutput {
 	public static final int CELL_HEIGHT = 18;
 
 	public static GLUtils.Color[] COLORS = {
-			new GLUtils.Color(240, 240, 240),
-			new GLUtils.Color(242, 178, 51),
-			new GLUtils.Color(229, 127, 216),
-			new GLUtils.Color(153, 178, 242),
-			new GLUtils.Color(222, 222, 108),
-			new GLUtils.Color(127, 204, 25),
-			new GLUtils.Color(242, 178, 204),
-			new GLUtils.Color(76, 76, 76),
-			new GLUtils.Color(153, 153, 153),
-			new GLUtils.Color(76, 153, 178),
-			new GLUtils.Color(178, 102, 229),
-			new GLUtils.Color(37, 49, 146),
-			new GLUtils.Color(127, 102, 76),
-			new GLUtils.Color(87, 166, 78),
-			new GLUtils.Color(204, 76, 76),
-			new GLUtils.Color(0, 0, 0),
+		new GLUtils.Color(240, 240, 240),
+		new GLUtils.Color(242, 178, 51),
+		new GLUtils.Color(229, 127, 216),
+		new GLUtils.Color(153, 178, 242),
+		new GLUtils.Color(222, 222, 108),
+		new GLUtils.Color(127, 204, 25),
+		new GLUtils.Color(242, 178, 204),
+		new GLUtils.Color(76, 76, 76),
+		new GLUtils.Color(153, 153, 153),
+		new GLUtils.Color(76, 153, 178),
+		new GLUtils.Color(178, 102, 229),
+		new GLUtils.Color(37, 49, 146),
+		new GLUtils.Color(127, 102, 76),
+		new GLUtils.Color(87, 166, 78),
+		new GLUtils.Color(204, 76, 76),
+		new GLUtils.Color(0, 0, 0),
 	};
 
 	protected final Font font = new Font();
