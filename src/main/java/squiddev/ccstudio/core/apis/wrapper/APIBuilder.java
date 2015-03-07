@@ -5,6 +5,7 @@ import org.luaj.vm2.Varargs;
 import org.objectweb.asm.*;
 import org.objectweb.asm.util.CheckClassAdapter;
 import squiddev.ccstudio.core.Config;
+import squiddev.ccstudio.core.luaj.Conversion;
 
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
@@ -46,7 +47,7 @@ public class APIBuilder {
 		toLua.put(boolean.class, TinyMethod.tryConstruct(luaValueClass, "valueOf", boolean.class));
 		toLua.put(int.class, TinyMethod.tryConstruct(luaValueClass, "valueOf", int.class));
 		toLua.put(double.class, TinyMethod.tryConstruct(luaValueClass, "valueOf", double.class));
-		toLua.put(String.class, TinyMethod.tryConstruct(luaValueClass, "valueOf", String.class));
+		toLua.put(String.class, TinyMethod.tryConstruct(Conversion.class, "valueOf", String.class));
 
 		Map<Class<?>, TinyMethod> fromLua = new HashMap<>();
 		FROM_LUA = fromLua;

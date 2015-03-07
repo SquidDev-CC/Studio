@@ -253,7 +253,10 @@ public class Computer {
 				public void run() {
 					setup();
 					loadBios();
-					mainCoroutine.resume(LuaValue.NONE);
+					Varargs result = mainCoroutine.resume(LuaValue.NONE);
+					if(mainCoroutine.getStatus().equals("dead")) {
+						System.out.println("Coroutine died " + result.arg(2).toString());
+					}
 				}
 			});
 			mainThread.start();
@@ -284,6 +287,9 @@ public class Computer {
 					}
 
 					mainThread.stop(force);
+
+					output.clear();
+					output.setBlink(false);
 				}
 			};
 

@@ -174,6 +174,8 @@ public class ComputerThread {
 								}
 							}
 					}
+				} catch (InterruptedException e) {
+					// Ignore this
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

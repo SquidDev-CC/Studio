@@ -61,7 +61,12 @@ public abstract class CCAPIWrapper extends CCAPI {
 		@Override
 		public Varargs invoke(Varargs varargs) {
 			computer.tryAbort();
-			return CCAPIWrapper.this.invoke(varargs, index);
+			try {
+				return CCAPIWrapper.this.invoke(varargs, index);
+			} catch (Exception e) {
+				e.printStackTrace();
+				throw e;
+			}
 		}
 	}
 }

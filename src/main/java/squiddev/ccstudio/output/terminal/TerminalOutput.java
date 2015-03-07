@@ -84,7 +84,7 @@ public class TerminalOutput implements IOutput, IOutput.ITerminalConfig {
 	 */
 	@Override
 	public void write(byte[] msg) {
-		for (byte b : msg) output.print(b);
+		for (byte b : msg) output.print((char) b);
 	}
 
 	/**
