@@ -2,10 +2,6 @@ package squiddev.ccstudio.output.lwjgl;
 
 import squiddev.ccstudio.output.IOutput;
 
-import java.io.IOException;
-
-import static org.lwjgl.opengl.GL11.*;
-
 /**
  * Handles font drawing
  */
@@ -40,24 +36,29 @@ public class Font {
 	 */
 	protected final int colourHeight;
 
-	public Font() {
-		TextureLoader textureLoader = new TextureLoader("squidev/ccstudio/output/lwjgl");
-		Texture texture;
-		try {
-			texture = textureLoader.getTexture("font.png");
-		} catch (IOException e) {
-			throw new RuntimeException("Cannot load font.png", e);
-		}
+	/**
+	 * Widths of each character
+	 */
+	protected final int[] characterWidths = {
+		0, 2, 8, 10, 10, 10, 10, 4, 8, 8, 8, 10, 2, 10, 2, 10, 10, 10, 10,
+		10, 10, 10, 10, 10, 10, 10, 2, 2, 8, 10, 8, 10, 12, 10, 10, 10, 10,
+		10, 10, 10, 10, 6, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+		10, 10, 10, 10, 10, 6, 10, 6, 10, 10, 4, 10, 10, 10, 10, 10, 8, 10,
+		10, 2, 10, 8, 4, 10, 10, 10, 10, 10, 10, 10, 6, 10, 10, 10, 10, 10,
+		10, 8, 2, 8, 12, 0
+	};
 
-		this.texture = texture;
+	public Font() {
+
+		Texture texture = this.texture = TextureLoader.loadTexture("/squiddev/ccstudio/output/lwjgl/font.png");
 
 		/*
 			The character is about 16 wide. We get the actual character width & height to make things easier.
 			Each colour block is 16 * 16 letters and there are 16 colour blocks.
 		*/
-		colourHeight = (int) texture.getHeight() / 16;
+		colourHeight = texture.getImageHeight() / 16;
 		charHeight = colourHeight / 16;
-		charWidth = (int) texture.getWidth() / CHARACTERS_PER_LINE;
+		charWidth = texture.getImageWidth() / CHARACTERS_PER_LINE;
 	}
 
 	/**
@@ -67,27 +68,20 @@ public class Font {
 	 * @param color     The color to use
 	 */
 	public void drawCharacter(byte character, int color) {
+		if (character <= ' ') return;
+
 		// Get character offsets
-		int xOffset = character % CHARACTERS_PER_LINE;
-		int yOffset = (character - IOutput.FIRST_CHAR) / CHARACTERS_PER_LINE + LINE_Y_OFFSET;
+		int charLoc = character - IOutput.FIRST_CHAR;
+		int xTexture = character % CHARACTERS_PER_LINE;
+		int yTexture = charLoc / CHARACTERS_PER_LINE + LINE_Y_OFFSET;
 
-		xOffset *= charWidth;
-		yOffset *= charHeight;
-		yOffset += (color * colourHeight);
+		xTexture *= charWidth;
+		yTexture *= charHeight;
+		yTexture += (15 - color) * colourHeight; // We need to invert the color
 
-		glBegin(GL_QUADS);
-		{
-			glTexCoord2f(xOffset, yOffset);
-			glVertex2f(0, 0);
+//		int offset = charWidth / 2 - characterWidths[charLoc] / 2 - 1;
+//		if (character == '@' || character  == '~') --offset;
 
-			glTexCoord2f(xOffset, yOffset + charHeight);
-			glVertex2f(0, GuiOutput.CELL_HEIGHT);
-
-			glTexCoord2f(xOffset + charHeight, yOffset + charHeight);
-			glVertex2f(GuiOutput.CELL_WIDTH, GuiOutput.CELL_HEIGHT);
-
-			glTexCoord2f(xOffset + charHeight, 0);
-			glVertex2f(GuiOutput.CELL_WIDTH, 0);
-		}
+		texture.render(xTexture, yTexture, charWidth, charHeight, 0, 0, GuiOutput.CELL_WIDTH, GuiOutput.CELL_HEIGHT);
 	}
 }
