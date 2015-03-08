@@ -65,6 +65,6 @@ public class Profiler extends VarArgFunction {
 
 	@Override
 	public Varargs onInvoke(Varargs varargs) {
-		return function.invoke();
+		return function.invoke(varargs);
 	}
 }

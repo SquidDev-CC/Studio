@@ -1,12 +1,10 @@
 package squiddev.ccstudio.computer;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.luaj.vm2.LuaValue;
 import squiddev.ccstudio.core.Config;
 import squiddev.ccstudio.output.terminal.TerminalOutput;
 
-@Ignore
 public class ComputerTest {
 
 	@Test
