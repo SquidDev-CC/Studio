@@ -141,6 +141,7 @@ public class Texture {
 	}
 
 	public void render(float imageX, float imageY, float imageWidth, float imageHeight, float x, float y, float width, float height) {
+		glEnable(GL_TEXTURE_2D);
 		bind();
 
 		float wRatio = widthRatio;
@@ -170,5 +171,7 @@ public class Texture {
 			glVertex2f(width, y);
 		}
 		glEnd();
+
+		glDisable(GL_TEXTURE_2D);
 	}
 }

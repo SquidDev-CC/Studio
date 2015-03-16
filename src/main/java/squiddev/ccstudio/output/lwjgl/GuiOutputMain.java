@@ -189,7 +189,6 @@ public class GuiOutputMain {
 	}
 
 	private void loop() {
-		glEnable(GL_TEXTURE_2D);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 
 		glMatrixMode(GL_PROJECTION);
