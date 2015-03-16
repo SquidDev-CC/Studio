@@ -34,6 +34,7 @@ public class JavaBuilderTest {
 			{"BranchUpvalue"},
 			{"RecursiveTrace"},
 			{"TailCall"},
+			{"StringDump"},
 		};
 
 		return Arrays.asList(tests);

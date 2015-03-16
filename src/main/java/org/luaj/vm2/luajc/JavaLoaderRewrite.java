@@ -36,6 +36,7 @@ public class JavaLoaderRewrite extends ClassLoader {
 	private final LuaValue env;
 
 	private Map<String, byte[]> unloaded = new HashMap<>();
+	private Map<String, Prototype> prototypes = new HashMap<>();
 
 	public JavaLoaderRewrite(LuaValue env) {
 		super(JavaLoaderRewrite.class.getClassLoader());
@@ -65,6 +66,8 @@ public class JavaLoaderRewrite extends ClassLoader {
 
 	public void include(JavaGenRewrite jg) {
 		unloaded.put(jg.className, jg.bytecode);
+		prototypes.put(jg.className, jg.prototype);
+
 		for (int i = 0, n = jg.inners != null ? jg.inners.length : 0; i < n; i++) {
 			include(jg.inners[i]);
 		}
@@ -77,7 +80,16 @@ public class JavaLoaderRewrite extends ClassLoader {
 	public Class findClass(String className) throws ClassNotFoundException {
 		byte[] bytes = unloaded.get(className);
 		if (bytes != null) {
-			return defineClass(className, bytes, 0, bytes.length);
+			Class generatedClass = defineClass(className, bytes, 0, bytes.length);
+
+			// Attempt to set the prototype object to this class
+			try {
+				generatedClass.getField(JavaBuilderRewrite.PROTOTYPE_NAME).set(null, prototypes.get(className));
+			} catch (ReflectiveOperationException e) {
+				e.printStackTrace();
+			}
+
+			return generatedClass;
 		}
 		return super.findClass(className);
 	}
