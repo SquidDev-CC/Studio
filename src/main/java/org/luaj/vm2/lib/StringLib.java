@@ -23,6 +23,7 @@ package org.luaj.vm2.lib;
 
 import org.luaj.vm2.*;
 import org.luaj.vm2.compiler.DumpState;
+import org.luaj.vm2.luajc.IGetSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -64,11 +65,11 @@ public class StringLib extends OneArgFunction {
 	public LuaValue call(LuaValue arg) {
 		LuaTable t = new LuaTable();
 		bind(t, StringLib1.class, new String[]{
-				"dump", "len", "lower", "reverse", "upper",});
+			"dump", "len", "lower", "reverse", "upper",});
 		bind(t, StringLibV.class, new String[]{
-				"byte", "char", "find", "format",
-				"gmatch", "gsub", "match", "rep",
-				"sub"});
+			"byte", "char", "find", "format",
+			"gmatch", "gsub", "match", "rep",
+			"sub"});
 		env.set("string", t);
 		instance = t;
 		if (LuaString.s_metatable == null)
@@ -185,7 +186,16 @@ public class StringLib extends OneArgFunction {
 		LuaValue f = arg.checkfunction();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
-			DumpState.dump(((LuaClosure) f).p, baos, true);
+			Prototype closure;
+			if (f instanceof LuaClosure) {
+				closure = ((LuaClosure) f).p;
+			} else if (f instanceof IGetSource) {
+				closure = ((IGetSource) f).getPrototype();
+			} else {
+				throw new LuaError("Cannot cast Java function (" + f.getClass().getName() + ")");
+			}
+
+			DumpState.dump(closure, baos, true);
 			return LuaString.valueOf(baos.toByteArray());
 		} catch (IOException e) {
 			return error(e.getMessage());
@@ -814,9 +824,9 @@ public class StringLib extends OneArgFunction {
 		for (int i = 0; i < 256; ++i) {
 			final char c = (char) i;
 			CHAR_TABLE[i] = (byte) ((Character.isDigit(c) ? MASK_DIGIT : 0) |
-					(Character.isLowerCase(c) ? MASK_LOWERCASE : 0) |
-					(Character.isUpperCase(c) ? MASK_UPPERCASE : 0) |
-					((c < ' ' || c == 0x7F) ? MASK_CONTROL : 0));
+				(Character.isLowerCase(c) ? MASK_LOWERCASE : 0) |
+				(Character.isUpperCase(c) ? MASK_UPPERCASE : 0) |
+				((c < ' ' || c == 0x7F) ? MASK_CONTROL : 0));
 			if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9')) {
 				CHAR_TABLE[i] |= MASK_HEXDIGIT;
 			}
@@ -1092,7 +1102,7 @@ public class StringLib extends OneArgFunction {
 								int ep = classend(poffset);
 								int previous = (soffset == 0) ? -1 : s.luaByte(soffset - 1);
 								if (matchbracketclass(previous, poffset, ep - 1) ||
-										matchbracketclass(s.luaByte(soffset), poffset, ep - 1))
+									matchbracketclass(s.luaByte(soffset), poffset, ep - 1))
 									return -1;
 								poffset = ep;
 								continue;
@@ -1141,7 +1151,7 @@ public class StringLib extends OneArgFunction {
 		int max_expand(int soff, int poff, int ep) {
 			int i = 0;
 			while (soff + i < s.length() &&
-					singlematch(s.luaByte(soff + i), poff, ep))
+				singlematch(s.luaByte(soff + i), poff, ep))
 				i++;
 			while (i >= 0) {
 				int res = match(soff + i, ep + 1);
@@ -1190,7 +1200,7 @@ public class StringLib extends OneArgFunction {
 			l = check_capture(l);
 			int len = clen[l];
 			if ((s.length() - soff) >= len &&
-					LuaString.equals(s, cinit[l], s, soff, len))
+				LuaString.equals(s, cinit[l], s, soff, len))
 				return soff + len;
 			else
 				return -1;
