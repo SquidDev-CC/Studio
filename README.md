@@ -1,4 +1,4 @@
-# CC-Studio
+# CC-Studio [![Build Status](https://travis-ci.org/SquidDev-CC/Studio.svg)](https://travis-ci.org/SquidDev-CC/Studio)
 The CC Emulator for devlopers
 
 ## Why?
