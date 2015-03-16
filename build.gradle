@@ -7,12 +7,19 @@ version = '0.1'
 
 repositories {
 	mavenCentral()
+
+	// http://addons-origin.cursecdn.com/files/2228/723/ComputerCraft1.73.jar
+
+	ivy {
+		name "ComputerCraft"
+		artifactPattern "http://addons-origin.cursecdn.com/files/2228/723/[module][revision].[ext]"
+	}
 }
 
 dependencies {
 	// Core Libraries
 	compile group: 'org.ow2.asm', name: 'asm-all', version: '5.+'
-	compile files('lib/ComputerCraft1.65.jar')
+	compile group: 'ComputerCraft', name: 'ComputerCraft', version: '1.73', ext: 'jar'
 
 	// TerminalOutput dependencies
 	compile group: 'jline', name: 'jline', version: '2.+'
