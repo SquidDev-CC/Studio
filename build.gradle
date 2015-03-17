@@ -8,8 +8,6 @@ version = '0.1'
 repositories {
 	mavenCentral()
 
-	// http://addons-origin.cursecdn.com/files/2228/723/ComputerCraft1.73.jar
-
 	ivy {
 		name "ComputerCraft"
 		artifactPattern "http://addons-origin.cursecdn.com/files/2228/723/[module][revision].[ext]"
@@ -25,11 +23,29 @@ dependencies {
 	compile group: 'jline', name: 'jline', version: '2.+'
 
 	// LWJGL dependencies
+	// http://build.lwjgl.org/stable/lwjgl.zip
 	// compile group: 'org.lwjgl.lwjgl', name: 'lwjgl', version: '2.9.3'
-	compile files('lib/lwjgl.jar')
+	compile files('lib/jar/lwjgl.jar')
 
 	testCompile group: 'junit', name: 'junit', version: '4.+'
 }
+
+// Download LWJGL from online
+task getLwjgl(type: Copy) {
+	def f = file('lib/jar/lwjgl.jar')
+	if (!f.exists()) {
+		def output = file("lib/lwjgl.zip")
+
+		new URL('http://build.lwjgl.org/stable/lwjgl.zip').withInputStream {
+			i -> output.withOutputStream { it << i }
+		}
+		from zipTree(output)
+		into "lib"
+		include "jar/**"
+	}
+}
+
+compileJava.dependsOn getLwjgl
 
 uploadArchives {
 	repositories {
