@@ -34,6 +34,7 @@ dependencies {
 task getLwjgl(type: Copy) {
 	def f = file('lib/jar/lwjgl.jar')
 	if (!f.exists()) {
+		file("lib").mkdirs();
 		def output = file("lib/lwjgl.zip")
 
 		new URL('http://build.lwjgl.org/stable/lwjgl.zip').withInputStream {
