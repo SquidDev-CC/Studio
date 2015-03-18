@@ -3,16 +3,13 @@ package squiddev.ccstudio.core.apis.wrapper;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.objectweb.asm.*;
-import org.objectweb.asm.util.CheckClassAdapter;
 import squiddev.ccstudio.core.Config;
+import squiddev.ccstudio.core.asm.AsmUtils;
 import squiddev.ccstudio.core.luaj.Conversion;
 
-import java.io.PrintWriter;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Stream;
 
 import static org.objectweb.asm.Opcodes.*;
 import static squiddev.ccstudio.core.asm.AsmUtils.TinyMethod;
@@ -279,50 +276,29 @@ public class APIBuilder {
 				mv.visitJumpInsn(IF_ICMPLT, doException);
 
 				// TODO: Handle this properly (Will break if the LuaValue is the last option)
-				int argCounter = 0;
-				for (Class<?> arg : arguments) {
-					String name;
-					boolean isLast = length == (argCounter + 1);
+				int argCounter = 1;
+				ILuaValidator validator = new DefaultLuaValidator();
+				Stream<Class<?>> results = Arrays.asList(arguments).stream().filter(validator::shouldValidate);
+
+				Iterator<Class<?>> iterator = results.iterator();
+				while (iterator.hasNext()) {
+					Class<?> arg = iterator.next();
 
 					// arg.get(<argCounter>)
 					mv.visitVarInsn(ALOAD, 1);
-					constantOpcode(mv, argCounter + 1);
+					constantOpcode(mv, argCounter);
 					mv.visitMethodInsn(INVOKEVIRTUAL, "org/luaj/vm2/Varargs", "arg", "(I)Lorg/luaj/vm2/LuaValue;", false);
 
-					// TODO: Make this nicer
-					if (arg.equals(boolean.class)) {
-						name = "boolean";
-						mv.visitMethodInsn(INVOKEVIRTUAL, "org/luaj/vm2/LuaValue", "isboolean", "()Z", false);
-					} else if (arg.equals(byte.class) || arg.equals(int.class) || arg.equals(char.class) || arg.equals(short.class)) {
-						name = "number";
-						mv.visitMethodInsn(INVOKEVIRTUAL, "org/luaj/vm2/LuaValue", "isint", "()Z", false);
-					} else if (arg.equals(float.class) || arg.equals(double.class)) {
-						name = "number";
-						mv.visitMethodInsn(INVOKEVIRTUAL, "org/luaj/vm2/LuaValue", "isnumber", "()Z", false);
-					} else if (arg.equals(long.class)) {
-						name = "number";
-						mv.visitMethodInsn(INVOKEVIRTUAL, "org/luaj/vm2/LuaValue", "islong", "()Z", false);
-					} else if (arg.equals(String.class)) {
-						name = "string";
-						mv.visitMethodInsn(INVOKEVIRTUAL, "org/luaj/vm2/LuaValue", "isstring", "()Z", false);
-					} else if (arg.equals(LuaValue.class)) {
-						// TODO: Make LuaValue handling better (support LuaNumber - for example)
-						name = arg.getSimpleName();
-					} else {
-						throw new BuilderException("Cannot validate " + arg.getName(), method);
-					}
+					validator.addValidation(mv, arg);
+					builder.append(validator.getName(arg));
 
-					if (isLast) {
-						// If (condition) is false then skip to noException, else doException
-						mv.visitJumpInsn(IFNE, noException);
-					} else {
-						// If (condition) is true then doException
+					if (iterator.hasNext()) {
+						// If (condition) is false (== 0) then go to exception, else continue
 						mv.visitJumpInsn(IFEQ, doException);
-					}
-
-					builder.append(name);
-					if (!isLast) {
 						builder.append(", ");
+					} else {
+						// If (condition) is true (== 1) then no exception
+						mv.visitJumpInsn(IFNE, noException);
 					}
 
 					++argCounter;
@@ -364,8 +340,9 @@ public class APIBuilder {
 					if (!arg.equals(LuaValue.class)) {
 						// Check if we have a converter
 						TinyMethod type = FROM_LUA.get(arg);
-						if (type == null)
+						if (type == null) {
 							throw new BuilderException("Cannot convert LuaValue to " + arg.getName(), method);
+						}
 
 						type.inject(mv, INVOKEVIRTUAL);
 					}
@@ -384,8 +361,9 @@ public class APIBuilder {
 			} else if (!Varargs.class.isAssignableFrom(returns)) { // Don't need to convert if returning a LuaValue
 				// Check if we have a converter
 				TinyMethod type = TO_LUA.get(returns);
-				if (type == null)
+				if (type == null) {
 					throw new BuilderException("Cannot convert " + returns.getName() + " to LuaValue for ", method);
+				}
 
 				type.inject(mv, INVOKESTATIC);
 			}
@@ -408,7 +386,7 @@ public class APIBuilder {
 	public byte[] toByteArray() {
 		byte[] bytes = writer.toByteArray();
 		if (Config.verifySources) {
-			CheckClassAdapter.verify(new ClassReader(bytes), false, new PrintWriter(System.out));
+			AsmUtils.validateClass(bytes);
 		}
 
 		return bytes;

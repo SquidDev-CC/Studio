@@ -39,12 +39,11 @@ public class APIBuilderTest {
 	 */
 	@Test
 	public void testFunctions() {
-		assertEquals(2, table.get("twoArgsOneReturn").invoke(LuaValue.valueOf(1), LuaValue.valueOf(1)).todouble(1), 0);
 		assertEquals(LuaValue.NONE, table.get("noArgsNoReturn").invoke());
-
 		assertEquals(LuaValue.TRUE, table.get("noArgsLuaReturn").invoke());
 
 		assertEquals(2, table.get("varArgsLuaReturn").invoke(LuaValue.valueOf(2)).toint(1));
+		assertEquals(2, table.get("twoArgsOneReturn").invoke(LuaValue.valueOf(1), LuaValue.valueOf(1)).todouble(1), 0);
 	}
 
 	/**
