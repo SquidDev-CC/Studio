@@ -29,7 +29,7 @@ public class StrictValidator extends DefaultLuaValidator {
 			) {
 			mv.visitTypeInsn(INSTANCEOF, "org/luaj/vm2/LuaNumber");
 		} else if (type.equals(String.class)) {
-			mv.visitTypeInsn(INSTANCEOF, "org/luaj/vm2/Sting");
+			mv.visitTypeInsn(INSTANCEOF, "org/luaj/vm2/LuaString");
 		} else if (LuaValue.class.isAssignableFrom(type)) {
 			mv.visitTypeInsn(INSTANCEOF, Type.getInternalName(type));
 		} else {

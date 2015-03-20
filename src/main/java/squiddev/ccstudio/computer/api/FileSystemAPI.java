@@ -32,18 +32,9 @@ public class FileSystemAPI {
 	}
 
 	@LuaFunction
-	public LuaTable list(String path) {
+	public String[] list(String path) {
 		try {
-			String[] elements = getFileSystem().list(path);
-
-			int length = elements.length;
-			LuaTable result = new LuaTable(length, 0);
-
-			for (int i = 0; i < length; i++) {
-				result.insert(i + 1, LuaValue.valueOf(elements[i]));
-			}
-
-			return result;
+			return getFileSystem().list(path);
 		} catch (FileSystemException e) {
 			throw new LuaError(e.getMessage());
 		}
