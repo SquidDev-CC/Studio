@@ -115,6 +115,21 @@ public class APIBuilderTest {
 		assertEquals(result.get(3).toint(), -1);
 	}
 
+	@Test
+	public void testStrictMode() {
+		LuaValue strictMode = table.get("strictMode");
+		LuaValue stringNumber = LuaValue.valueOf("2");
+		LuaValue normalNumber = LuaValue.valueOf(2);
+
+		strictMode.invoke(normalNumber, normalNumber);
+		strictMode.invoke(normalNumber, stringNumber);
+
+		ExpectException.expect(LuaError.class, "Expected number, number",
+			() -> strictMode.invoke(stringNumber, stringNumber),
+			() -> strictMode.invoke(stringNumber, normalNumber)
+		);
+	}
+
 	@SuppressWarnings("UnusedDeclaration")
 	@LuaAPI({"embedded", "embed"})
 	public static class EmbedClass {
@@ -164,6 +179,12 @@ public class APIBuilderTest {
 				LuaNumber.ZERO,
 				LuaNumber.MINUSONE,
 			};
+		}
+
+		@LuaFunction
+		@ValidationClass(StrictValidator.class)
+		public void strictMode(int a, @ValidationClass(DefaultLuaValidator.class) int b) {
+
 		}
 	}
 }
