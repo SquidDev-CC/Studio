@@ -392,13 +392,16 @@ public class APIBuilder {
 				// If no result, return None
 				mv.visitFieldInsn(GETSTATIC, "org/luaj/vm2/LuaValue", "NONE", "Lorg/luaj/vm2/LuaValue;");
 			} else if (!Varargs.class.isAssignableFrom(returns)) { // Don't need to convert if returning a LuaValue
-				// Check if we have a converter
-				TinyMethod type = TO_LUA.get(returns);
-				if (type == null) {
-					throw new BuilderException("Cannot convert " + returns.getName() + " to LuaValue for ", method);
-				}
 
-				type.inject(mv, INVOKESTATIC);
+				if (!returns.isArray() || !LuaValue.class.isAssignableFrom(returns.getComponentType())) {
+					// Check if we have a converter
+					TinyMethod type = TO_LUA.get(returns);
+					if (type == null) {
+						throw new BuilderException("Cannot convert " + returns.getName() + " to LuaValue for ", method);
+					}
+
+					type.inject(mv, INVOKESTATIC);
+				}
 
 				// If we return an array then try return a {@link LuaTable} or {@link Varargs}
 				if (returns.isArray()) {

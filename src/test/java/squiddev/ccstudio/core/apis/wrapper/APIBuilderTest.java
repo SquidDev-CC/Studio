@@ -107,6 +107,14 @@ public class APIBuilderTest {
 		assertEquals(result.get(3).toint(), 9);
 	}
 
+	@Test
+	public void testReturnLuaNumberArray() {
+		LuaTable result = (LuaTable) table.get("returnLuaNumberArray").invoke().arg1();
+		assertEquals(result.get(1).toint(), 1);
+		assertEquals(result.get(2).toint(), 0);
+		assertEquals(result.get(3).toint(), -1);
+	}
+
 	@SuppressWarnings("UnusedDeclaration")
 	@LuaAPI({"embedded", "embed"})
 	public static class EmbedClass {
@@ -147,6 +155,15 @@ public class APIBuilderTest {
 		@LuaFunction(isVarArgs = true)
 		public int[] returnVarargs() {
 			return new int[]{1, 4, 9};
+		}
+
+		@LuaFunction
+		public LuaNumber[] returnLuaNumberArray() {
+			return new LuaNumber[]{
+				LuaNumber.ONE,
+				LuaNumber.ZERO,
+				LuaNumber.MINUSONE,
+			};
 		}
 	}
 }
