@@ -6,6 +6,7 @@ import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
+import squiddev.ccstudio.core.apis.wrapper.builder.APIBuilder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -95,6 +96,8 @@ public class DefaultLuaValidator implements ILuaValidator {
 		classNames.put(float.class, "number");
 		classNames.put(double.class, "number");
 		classNames.put(long.class, "number");
+
+		// Cope with LuaDouble/LuaInteger items
 		classNames.put(LuaDouble.class, "number");
 		classNames.put(LuaInteger.class, "number");
 

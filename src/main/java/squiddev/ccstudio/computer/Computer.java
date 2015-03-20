@@ -14,8 +14,8 @@ import org.luaj.vm2.luajc.LuaJCRewrite;
 import squiddev.ccstudio.computer.api.*;
 import squiddev.ccstudio.core.Config;
 import squiddev.ccstudio.core.apis.CCAPI;
-import squiddev.ccstudio.core.apis.wrapper.APIClassLoader;
 import squiddev.ccstudio.core.apis.wrapper.LuaAPI;
+import squiddev.ccstudio.core.apis.wrapper.builder.APIClassLoader;
 import squiddev.ccstudio.core.utils.FileSystemUtilities;
 import squiddev.ccstudio.output.IOutput;
 

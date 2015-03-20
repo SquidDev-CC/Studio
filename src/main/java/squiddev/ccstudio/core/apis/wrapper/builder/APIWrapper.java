@@ -1,4 +1,4 @@
-package squiddev.ccstudio.core.apis.wrapper;
+package squiddev.ccstudio.core.apis.wrapper.builder;
 
 import squiddev.ccstudio.core.apis.CCAPIWrapper;
 

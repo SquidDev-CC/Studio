@@ -2,13 +2,12 @@ package squiddev.ccstudio.core.apis.wrapper;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.luaj.vm2.LuaError;
-import org.luaj.vm2.LuaTable;
-import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.Varargs;
+import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JsePlatform;
 import squiddev.ccstudio.computer.Computer;
 import squiddev.ccstudio.core.Config;
+import squiddev.ccstudio.core.apis.wrapper.builder.APIClassLoader;
+import squiddev.ccstudio.core.apis.wrapper.builder.APIWrapper;
 import squiddev.ccstudio.core.testutils.ExpectException;
 import squiddev.ccstudio.output.terminal.TerminalOutput;
 
@@ -76,6 +75,22 @@ public class APIBuilderTest {
 		);
 	}
 
+	/**
+	 * Test that subargs for varargs works
+	 */
+	@Test
+	public void testSubArgs() {
+		Varargs result = table.get("subArgs").invoke(new LuaValue[]{
+			LuaValue.valueOf("2"), LuaValue.valueOf(3), // Normal args
+			LuaValue.valueOf("Hello"), LuaValue.valueOf("World") // Subargs
+		});
+
+		assertEquals(result.arg(1).toint(), 3);
+		assertEquals(result.arg(2).toint(), 2);
+		assertEquals(result.arg(3).toString(), "Hello");
+		assertEquals(result.arg(4).toString(), "World");
+	}
+
 	@SuppressWarnings("UnusedDeclaration")
 	@LuaAPI({"embedded", "embed"})
 	public static class EmbedClass {
@@ -101,6 +116,11 @@ public class APIBuilderTest {
 		@LuaFunction(value = {"one", "two", "varArgsLuaReturn"})
 		public Varargs varArgsLuaReturn(Varargs args) {
 			return args;
+		}
+
+		@LuaFunction
+		public Varargs subArgs(int a, LuaNumber b, Varargs args) {
+			return LuaValue.varargsOf(b, LuaValue.valueOf(a), args);
 		}
 	}
 }

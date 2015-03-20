@@ -1,4 +1,4 @@
-package squiddev.ccstudio.core.apis.wrapper;
+package squiddev.ccstudio.core.apis.wrapper.builder;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,15 +1,20 @@
-package squiddev.ccstudio.core.apis.wrapper;
+package squiddev.ccstudio.core.apis.wrapper.builder;
 
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.objectweb.asm.*;
 import squiddev.ccstudio.core.Config;
+import squiddev.ccstudio.core.apis.wrapper.ILuaValidator;
+import squiddev.ccstudio.core.apis.wrapper.LuaAPI;
+import squiddev.ccstudio.core.apis.wrapper.LuaFunction;
 import squiddev.ccstudio.core.asm.AsmUtils;
 import squiddev.ccstudio.core.luaj.Conversion;
 
 import java.lang.reflect.Method;
-import java.util.*;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.objectweb.asm.Opcodes.*;
 import static squiddev.ccstudio.core.asm.AsmUtils.TinyMethod;
@@ -49,15 +54,15 @@ public class APIBuilder {
 		Map<Class<?>, TinyMethod> fromLua = new HashMap<>();
 		FROM_LUA = fromLua;
 
-		fromLua.put(boolean.class, TinyMethod.tryConstruct(luaValueClass, "toboolean"));
-		fromLua.put(byte.class, TinyMethod.tryConstruct(luaValueClass, "tobyte"));
-		fromLua.put(char.class, TinyMethod.tryConstruct(luaValueClass, "tochar"));
-		fromLua.put(double.class, TinyMethod.tryConstruct(luaValueClass, "todouble"));
-		fromLua.put(float.class, TinyMethod.tryConstruct(luaValueClass, "tofloat"));
-		fromLua.put(int.class, TinyMethod.tryConstruct(luaValueClass, "toint"));
-		fromLua.put(long.class, TinyMethod.tryConstruct(luaValueClass, "tolong"));
-		fromLua.put(short.class, TinyMethod.tryConstruct(luaValueClass, "toshort"));
-		fromLua.put(String.class, TinyMethod.tryConstruct(luaValueClass, "tojstring"));
+		fromLua.put(boolean.class, TinyMethod.tryConstruct(LuaValue.class, "toboolean"));
+		fromLua.put(byte.class, TinyMethod.tryConstruct(LuaValue.class, "tobyte"));
+		fromLua.put(char.class, TinyMethod.tryConstruct(LuaValue.class, "tochar"));
+		fromLua.put(double.class, TinyMethod.tryConstruct(LuaValue.class, "todouble"));
+		fromLua.put(float.class, TinyMethod.tryConstruct(LuaValue.class, "tofloat"));
+		fromLua.put(int.class, TinyMethod.tryConstruct(LuaValue.class, "toint"));
+		fromLua.put(long.class, TinyMethod.tryConstruct(LuaValue.class, "tolong"));
+		fromLua.put(short.class, TinyMethod.tryConstruct(LuaValue.class, "toshort"));
+		fromLua.put(String.class, TinyMethod.tryConstruct(LuaValue.class, "tojstring"));
 	}
 
 	final Class<?> reflection;
@@ -255,55 +260,49 @@ public class APIBuilder {
 			mv.visitLabel(labels[counter]);
 			mv.visitFrame(F_SAME, 0, null, 0, null);
 
-			// Load instance
-			Class<?>[] arguments = method.method.getParameterTypes();
-			Class<?> returns = method.method.getReturnType();
+			LuaMethod.ValidationIterator iterator = method.validationIterator();
+			StringBuilder builder = new StringBuilder("Expected ");
+			boolean needsValidation = iterator.hasValidateNext();
 
-			// Avoid argument validation
-			if (arguments.length == 1 && arguments[0].equals(Varargs.class)) {
-				/* No validation required */
-			} else if (arguments.length != 0) {
-				StringBuilder builder = new StringBuilder("Expected ");
+			Label doException = new Label();
+			Label noException = new Label();
 
-				int length = arguments.length;
-				Label doException = new Label();
-				Label noException = new Label();
-
-				// Check has enough arguments
+			if (needsValidation) {
 				mv.visitVarInsn(ALOAD, 1);
 				mv.visitMethodInsn(INVOKEVIRTUAL, "org/luaj/vm2/Varargs", "narg", "()I", false);
-				constantOpcode(mv, length);
+				constantOpcode(mv, iterator.length());
 				mv.visitJumpInsn(IF_ICMPLT, doException);
+			}
 
-				// TODO: Handle this properly (Will break if the LuaValue is the last option)
-				int argCounter = 1;
-				ILuaValidator validator = new DefaultLuaValidator();
-				Stream<Class<?>> results = Arrays.asList(arguments).stream().filter(validator::shouldValidate);
+			int index = 1;
+			while (iterator.hasNext()) {
+				LuaMethod.LuaArgument arg = iterator.next();
+				Class<?> type = arg.type;
+				ILuaValidator validator = arg.getValidator();
 
-				Iterator<Class<?>> iterator = results.iterator();
-				while (iterator.hasNext()) {
-					Class<?> arg = iterator.next();
+				// If the item is a varargs then we shouldn't give it a name
+				// Varargs will always be the last item
+				if (!type.equals(Varargs.class)) builder.append(validator.getName(type)).append(", ");
 
-					// arg.get(<argCounter>)
+				if (validator.shouldValidate(type)) {
 					mv.visitVarInsn(ALOAD, 1);
-					constantOpcode(mv, argCounter);
+					constantOpcode(mv, index);
 					mv.visitMethodInsn(INVOKEVIRTUAL, "org/luaj/vm2/Varargs", "arg", "(I)Lorg/luaj/vm2/LuaValue;", false);
+					validator.addValidation(mv, type);
 
-					validator.addValidation(mv, arg);
-					builder.append(validator.getName(arg));
-
-					if (iterator.hasNext()) {
+					if (iterator.hasValidateNext()) {
 						// If (condition) is false (== 0) then go to exception, else continue
 						mv.visitJumpInsn(IFEQ, doException);
-						builder.append(", ");
 					} else {
 						// If (condition) is true (== 1) then no exception
 						mv.visitJumpInsn(IFNE, noException);
 					}
-
-					++argCounter;
 				}
 
+				++index;
+			}
+
+			if (needsValidation) {
 				// Do exception
 				mv.visitLabel(doException);
 				mv.visitFrame(F_SAME, 0, null, 0, null);
@@ -311,7 +310,12 @@ public class APIBuilder {
 				mv.visitInsn(DUP);
 
 				String error = method.getError();
-				mv.visitLdcInsn(error == null ? builder.toString() : error);
+				String text = builder.toString();
+				if (error == null) {
+					if (text.endsWith(", ")) text = text.substring(0, text.length() - 2);
+					error = text;
+				}
+				mv.visitLdcInsn(error);
 				mv.visitMethodInsn(INVOKESPECIAL, "org/luaj/vm2/LuaError", "<init>", "(Ljava/lang/String;)V", false);
 				mv.visitInsn(ATHROW);
 
@@ -319,42 +323,48 @@ public class APIBuilder {
 				mv.visitLabel(noException);
 				mv.visitFrame(F_SAME, 0, null, 0, null);
 			}
-
 			// Check the object is correct
 			mv.visitVarInsn(ALOAD, 0);
 			mv.visitFieldInsn(GETFIELD, className, "instance", "Ljava/lang/Object;");
 			mv.visitTypeInsn(CHECKCAST, originalName);
 
 			// Load the arguments
-			if (arguments.length == 1 && arguments[0].equals(Varargs.class)) {
-				// Load the VarArgs as an argument (no validation required)
+			int argCounter = 1;
+			iterator.rewind();
+			for (LuaMethod.LuaArgument arg : iterator) {
 				mv.visitVarInsn(ALOAD, 1);
-			} else {
-				int argCounter = 1;
-				for (Class<?> arg : arguments) {
-					mv.visitVarInsn(ALOAD, 1);
+
+				Class<?> argType = arg.type;
+				if (argType.equals(Varargs.class)) {
+					// If we just have varargs then we should load it, if we have varargs later then use subargs
+					if (iterator.length() > 1) {
+						constantOpcode(mv, argCounter);
+						mv.visitMethodInsn(INVOKEVIRTUAL, "org/luaj/vm2/Varargs", "subargs", "(I)Lorg/luaj/vm2/Varargs;", false);
+					}
+				} else {
 					constantOpcode(mv, argCounter);
 					mv.visitMethodInsn(INVOKEVIRTUAL, "org/luaj/vm2/Varargs", "arg", "(I)Lorg/luaj/vm2/LuaValue;", false);
 
-					// If we don't need to convert
-					if (!arg.equals(LuaValue.class)) {
-						// Check if we have a converter
-						TinyMethod type = FROM_LUA.get(arg);
+					if (LuaValue.class.isAssignableFrom(argType)) {
+						// Cast to the type required
+						mv.visitTypeInsn(CHECKCAST, Type.getInternalName(argType));
+					} else {
+						TinyMethod type = FROM_LUA.get(argType);
 						if (type == null) {
-							throw new BuilderException("Cannot convert LuaValue to " + arg.getName(), method);
+							throw new BuilderException("Cannot convert LuaValue to " + argType, method);
 						}
 
 						type.inject(mv, INVOKEVIRTUAL);
 					}
-
-					argCounter += 1;
 				}
+
+				++argCounter;
 			}
 
 			// And call it
 			mv.visitMethodInsn(INVOKEVIRTUAL, originalName, method.getJavaName(), Type.getMethodDescriptor(method.method), false);
 
-
+			Class<?> returns = method.method.getReturnType();
 			if (returns.equals(Void.TYPE)) {
 				// If no result, return None
 				mv.visitFieldInsn(GETSTATIC, "org/luaj/vm2/LuaValue", "NONE", "Lorg/luaj/vm2/LuaValue;");
@@ -390,55 +400,6 @@ public class APIBuilder {
 		}
 
 		return bytes;
-	}
-
-	/**
-	 * Stores all data associated with a Lua function
-	 */
-	public static class LuaMethod {
-		public final LuaFunction function;
-		public final Method method;
-
-		public LuaMethod(Method m) {
-			this(m.getAnnotation(LuaFunction.class), m);
-		}
-
-		public LuaMethod(LuaFunction f, Method m) {
-			function = f;
-			method = m;
-		}
-
-		/**
-		 * Get the names of the Lua function
-		 *
-		 * @return A list of method names
-		 */
-		public String[] getLuaName() {
-			String[] luaName = function.value();
-			if (luaName == null || luaName.length == 0 || (luaName.length == 1 && luaName[0].isEmpty())) {
-				return new String[]{method.getName()};
-			}
-			return luaName;
-		}
-
-		/**
-		 * Get the name of the Java method
-		 *
-		 * @return The Java method name
-		 */
-		public String getJavaName() {
-			return method.getName();
-		}
-
-		/**
-		 * Get the error to throw
-		 *
-		 * @return The error message to throw or null on nothing
-		 */
-		public String getError() {
-			String error = function.error();
-			return (error == null || error.isEmpty()) ? null : error;
-		}
 	}
 
 	public static class BuilderException extends RuntimeException {
