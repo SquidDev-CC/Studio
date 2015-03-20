@@ -40,11 +40,10 @@ public class OSAPI {
 	}
 
 	@LuaFunction
-	public void queueEvent(Varargs args) {
-		if (!args.arg1().isstring()) throw new LuaError("Expected string");
+	public void queueEvent(String event, Varargs args) {
 		// TODO: Clone tables and trim at functions
 		// This is because CC converts to/from LuaValues so the original objects are lost
-		computer.queueEvent(args);
+		computer.queueEvent(event, args);
 	}
 
 	@LuaFunction
@@ -94,8 +93,7 @@ public class OSAPI {
 	}
 
 	@LuaFunction
-	public void setComputerLabel(Varargs args) {
-		LuaValue arg = args.arg1();
+	public void setComputerLabel(LuaValue arg) {
 		if (arg instanceof LuaString) {
 			String label = arg.tojstring();
 			if (label.length() > 32) label = label.substring(0, 32);

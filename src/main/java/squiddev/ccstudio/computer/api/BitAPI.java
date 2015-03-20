@@ -6,12 +6,15 @@ import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import squiddev.ccstudio.core.apis.wrapper.LuaAPI;
 import squiddev.ccstudio.core.apis.wrapper.LuaFunction;
+import squiddev.ccstudio.core.apis.wrapper.StrictValidator;
+import squiddev.ccstudio.core.apis.wrapper.ValidationClass;
 
 /**
  * The main Bit API
  */
 @SuppressWarnings("UnusedDeclaration")
 @LuaAPI("bit")
+@ValidationClass(StrictValidator.class)
 public class BitAPI {
 	protected static int toNumber(LuaValue o) {
 		if (o instanceof LuaNumber) { // Sadly CC does not support passing strings

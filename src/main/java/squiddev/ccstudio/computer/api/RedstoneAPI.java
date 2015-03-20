@@ -7,12 +7,15 @@ import squiddev.ccstudio.computer.Computer;
 import squiddev.ccstudio.computer.ComputerEnvironment;
 import squiddev.ccstudio.core.apis.wrapper.LuaAPI;
 import squiddev.ccstudio.core.apis.wrapper.LuaFunction;
+import squiddev.ccstudio.core.apis.wrapper.StrictValidator;
+import squiddev.ccstudio.core.apis.wrapper.ValidationClass;
 
 /**
  * Handles redstone IO
  */
 @SuppressWarnings("UnusedDeclaration")
 @LuaAPI({"rs", "redstone"})
+@ValidationClass(StrictValidator.class)
 public class RedstoneAPI {
 	protected final ComputerEnvironment environment;
 

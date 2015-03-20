@@ -6,6 +6,8 @@ import org.luaj.vm2.Varargs;
 import squiddev.ccstudio.computer.Computer;
 import squiddev.ccstudio.core.apis.wrapper.LuaAPI;
 import squiddev.ccstudio.core.apis.wrapper.LuaFunction;
+import squiddev.ccstudio.core.apis.wrapper.StrictValidator;
+import squiddev.ccstudio.core.apis.wrapper.ValidationClass;
 import squiddev.ccstudio.core.peripheral.IPeripheral;
 
 /**
@@ -13,6 +15,7 @@ import squiddev.ccstudio.core.peripheral.IPeripheral;
  */
 @SuppressWarnings("UnusedDeclaration")
 @LuaAPI("peripheral")
+@ValidationClass(StrictValidator.class)
 public class PeripheralAPI {
 	IPeripheral[] peripherals = new IPeripheral[6];
 

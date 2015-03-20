@@ -11,10 +11,13 @@ import org.luaj.vm2.Varargs;
 import squiddev.ccstudio.computer.Computer;
 import squiddev.ccstudio.core.apis.wrapper.LuaAPI;
 import squiddev.ccstudio.core.apis.wrapper.LuaFunction;
+import squiddev.ccstudio.core.apis.wrapper.StrictValidator;
+import squiddev.ccstudio.core.apis.wrapper.ValidationClass;
 
 import java.io.IOException;
 
 @LuaAPI("fs")
+@ValidationClass(StrictValidator.class)
 public class FileSystemAPI {
 	protected final Computer computer;
 	protected FileSystem fileSystem;
