@@ -91,6 +91,22 @@ public class APIBuilderTest {
 		assertEquals(result.arg(4).toString(), "World");
 	}
 
+	@Test
+	public void testReturnVarargs() {
+		Varargs result = table.get("returnVarargs").invoke();
+		assertEquals(result.arg(1).toint(), 1);
+		assertEquals(result.arg(2).toint(), 4);
+		assertEquals(result.arg(3).toint(), 9);
+	}
+
+	@Test
+	public void testReturnTable() {
+		LuaTable result = (LuaTable) table.get("returnTable").invoke().arg1();
+		assertEquals(result.get(1).toint(), 1);
+		assertEquals(result.get(2).toint(), 4);
+		assertEquals(result.get(3).toint(), 9);
+	}
+
 	@SuppressWarnings("UnusedDeclaration")
 	@LuaAPI({"embedded", "embed"})
 	public static class EmbedClass {
@@ -121,6 +137,16 @@ public class APIBuilderTest {
 		@LuaFunction
 		public Varargs subArgs(int a, LuaNumber b, Varargs args) {
 			return LuaValue.varargsOf(b, LuaValue.valueOf(a), args);
+		}
+
+		@LuaFunction
+		public int[] returnTable() {
+			return new int[]{1, 4, 9};
+		}
+
+		@LuaFunction(isVarArgs = true)
+		public int[] returnVarargs() {
+			return new int[]{1, 4, 9};
 		}
 	}
 }

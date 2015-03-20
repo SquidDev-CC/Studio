@@ -1,7 +1,6 @@
 package squiddev.ccstudio.core.apis.wrapper.builder;
 
-import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.Varargs;
+import org.luaj.vm2.*;
 import org.objectweb.asm.*;
 import squiddev.ccstudio.core.Config;
 import squiddev.ccstudio.core.apis.wrapper.ILuaValidator;
@@ -41,15 +40,39 @@ public class APIBuilder {
 	public static final Map<Class<?>, TinyMethod> FROM_LUA;
 
 	static {
-		Class<?> luaValueClass = LuaValue.class;
-
 		Map<Class<?>, TinyMethod> toLua = new HashMap<>();
 		TO_LUA = toLua;
 
-		toLua.put(boolean.class, TinyMethod.tryConstruct(luaValueClass, "valueOf", boolean.class));
-		toLua.put(int.class, TinyMethod.tryConstruct(luaValueClass, "valueOf", int.class));
-		toLua.put(double.class, TinyMethod.tryConstruct(luaValueClass, "valueOf", double.class));
+		// Boolean
+		toLua.put(boolean.class, TinyMethod.tryConstruct(LuaBoolean.class, "valueOf", boolean.class));
+		toLua.put(boolean[].class, TinyMethod.tryConstruct(Conversion.class, "valueOf", boolean[].class));
+
+		// Integers
+		toLua.put(int.class, TinyMethod.tryConstruct(LuaInteger.class, "valueOf", int.class));
+		toLua.put(int[].class, TinyMethod.tryConstruct(Conversion.class, "valueOf", int[].class));
+
+		toLua.put(byte.class, TinyMethod.tryConstruct(LuaInteger.class, "valueOf", int.class));
+		toLua.put(byte[].class, TinyMethod.tryConstruct(Conversion.class, "valueOf", byte[].class));
+
+		toLua.put(short.class, TinyMethod.tryConstruct(LuaInteger.class, "valueOf", int.class));
+		toLua.put(short[].class, TinyMethod.tryConstruct(Conversion.class, "valueOf", short[].class));
+
+		toLua.put(char.class, TinyMethod.tryConstruct(LuaInteger.class, "valueOf", int.class));
+		toLua.put(char[].class, TinyMethod.tryConstruct(Conversion.class, "valueOf", char[].class));
+
+		toLua.put(long.class, TinyMethod.tryConstruct(LuaInteger.class, "valueOf", long.class));
+		toLua.put(long[].class, TinyMethod.tryConstruct(Conversion.class, "valueOf", long[].class));
+
+		// Floats
+		toLua.put(double.class, TinyMethod.tryConstruct(LuaDouble.class, "valueOf", double.class));
+		toLua.put(double[].class, TinyMethod.tryConstruct(Conversion.class, "valueOf", double[].class));
+
+		toLua.put(float.class, TinyMethod.tryConstruct(LuaDouble.class, "valueOf", double.class));
+		toLua.put(float[].class, TinyMethod.tryConstruct(Conversion.class, "valueOf", float[].class));
+
+		// String
 		toLua.put(String.class, TinyMethod.tryConstruct(Conversion.class, "valueOf", String.class));
+		toLua.put(String[].class, TinyMethod.tryConstruct(Conversion.class, "valueOf", String[].class));
 
 		Map<Class<?>, TinyMethod> fromLua = new HashMap<>();
 		FROM_LUA = fromLua;
@@ -376,6 +399,15 @@ public class APIBuilder {
 				}
 
 				type.inject(mv, INVOKESTATIC);
+
+				// If we return an array then try return a {@link LuaTable} or {@link Varargs}
+				if (returns.isArray()) {
+					if (method.function.isVarArgs()) {
+						mv.visitMethodInsn(INVOKESTATIC, "org/luaj/vm2/LuaValue", "varargsOf", "([Lorg/luaj/vm2/LuaValue;)Lorg/luaj/vm2/Varargs;", false);
+					} else {
+						mv.visitMethodInsn(INVOKESTATIC, "org/luaj/vm2/LuaValue", "listOf", "([Lorg/luaj/vm2/LuaValue;)Lorg/luaj/vm2/LuaTable;", false);
+					}
+				}
 			}
 
 			mv.visitInsn(ARETURN);

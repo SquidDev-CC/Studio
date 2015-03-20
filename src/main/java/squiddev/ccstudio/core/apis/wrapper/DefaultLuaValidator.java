@@ -15,7 +15,7 @@ import static org.objectweb.asm.Opcodes.INSTANCEOF;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 
 /**
- * Validates values using {@see LuaValue.isnumber()} methods or <code>instanceof</code> if an exact type is specified
+ * Validates values using {@link LuaValue#isnumber()} methods or <code>instanceof</code> if an exact type is specified
  */
 public class DefaultLuaValidator implements ILuaValidator {
 	public static final Map<Class<?>, String> CLASS_NAMES;

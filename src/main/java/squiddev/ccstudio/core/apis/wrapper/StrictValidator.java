@@ -10,7 +10,7 @@ import static org.objectweb.asm.Opcodes.INSTANCEOF;
 /**
  * Validates values using <code>instanceof</code>
  * <p>
- * All number types are compared against {@see LuaNumber}
+ * All number types are compared against {@link org.luaj.vm2.LuaNumber}
  */
 public class StrictValidator extends DefaultLuaValidator {
 	/**
