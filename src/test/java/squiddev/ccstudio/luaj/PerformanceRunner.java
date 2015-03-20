@@ -11,8 +11,8 @@ import org.luaj.vm2.luajc.LuaJCRewrite;
 import squiddev.ccstudio.computer.Computer;
 import squiddev.ccstudio.computer.api.BitAPI;
 import squiddev.ccstudio.core.Config;
-import squiddev.ccstudio.core.apis.wrapper.APIClassLoader;
-import squiddev.ccstudio.core.apis.wrapper.APIWrapper;
+import squiddev.ccstudio.core.apis.wrapper.builder.APIClassLoader;
+import squiddev.ccstudio.core.apis.wrapper.builder.APIWrapper;
 import squiddev.ccstudio.output.terminal.TerminalOutput;
 
 import java.io.IOException;

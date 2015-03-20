@@ -6,7 +6,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * A slightly nicer way of handling exceptions
  *
- * @remarks I know {@see org.junit.rules.ExpectedException} exists, but it is not as flexible
+ * I know {@see org.junit.rules.ExpectedException} exists, but it is not as flexible
  */
 public class ExpectException {
 	/**
@@ -32,7 +32,11 @@ public class ExpectException {
 				continue;
 			}
 
-			assertTrue("Expected exception of type " + type.getName(), false);
+			if (type == null) {
+				assertTrue("Expected exception", false);
+			} else {
+				assertTrue("Expected exception of type " + type.getName(), false);
+			}
 		}
 	}
 

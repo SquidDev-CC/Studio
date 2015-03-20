@@ -31,7 +31,7 @@ public class AsmUtils {
 	/**
 	 * Insert the correct Opcode for Java constants
 	 *
-	 * @param mv     The {@see MethodVisitor}
+	 * @param mv     The {@link MethodVisitor}
 	 * @param number The constant to insert
 	 */
 	public static void constantOpcode(MethodVisitor mv, int number) {

@@ -17,9 +17,10 @@ public @interface LuaFunction {
 	public String[] value() default "";
 
 	/**
-	 * If this function returns multiple values
+	 * If this function returns multiple values (returns a {@link org.luaj.vm2.Varargs}
+	 * By default a {@link org.luaj.vm2.LuaTable} is returned if an array is returned
 	 */
-	public boolean multiReturn() default false;
+	public boolean isVarArgs() default false;
 
 	public String error() default "";
 }

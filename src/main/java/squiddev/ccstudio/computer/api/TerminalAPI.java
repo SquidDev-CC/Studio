@@ -5,12 +5,15 @@ import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import squiddev.ccstudio.core.apis.wrapper.LuaAPI;
 import squiddev.ccstudio.core.apis.wrapper.LuaFunction;
+import squiddev.ccstudio.core.apis.wrapper.StrictValidator;
+import squiddev.ccstudio.core.apis.wrapper.ValidationClass;
 import squiddev.ccstudio.output.IOutput;
 
 /**
  * Implements the terminal API
  */
 @LuaAPI("term")
+@ValidationClass(StrictValidator.class)
 public class TerminalAPI {
 	public final int width;
 	public final int height;

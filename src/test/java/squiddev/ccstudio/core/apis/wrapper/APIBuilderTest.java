@@ -2,13 +2,12 @@ package squiddev.ccstudio.core.apis.wrapper;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.luaj.vm2.LuaError;
-import org.luaj.vm2.LuaTable;
-import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.Varargs;
+import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JsePlatform;
 import squiddev.ccstudio.computer.Computer;
 import squiddev.ccstudio.core.Config;
+import squiddev.ccstudio.core.apis.wrapper.builder.APIClassLoader;
+import squiddev.ccstudio.core.apis.wrapper.builder.APIWrapper;
 import squiddev.ccstudio.core.testutils.ExpectException;
 import squiddev.ccstudio.output.terminal.TerminalOutput;
 
@@ -39,12 +38,11 @@ public class APIBuilderTest {
 	 */
 	@Test
 	public void testFunctions() {
-		assertEquals(2, table.get("twoArgsOneReturn").invoke(LuaValue.valueOf(1), LuaValue.valueOf(1)).todouble(1), 0);
 		assertEquals(LuaValue.NONE, table.get("noArgsNoReturn").invoke());
-
 		assertEquals(LuaValue.TRUE, table.get("noArgsLuaReturn").invoke());
 
 		assertEquals(2, table.get("varArgsLuaReturn").invoke(LuaValue.valueOf(2)).toint(1));
+		assertEquals(2, table.get("twoArgsOneReturn").invoke(LuaValue.valueOf(1), LuaValue.valueOf(1)).todouble(1), 0);
 	}
 
 	/**
@@ -77,6 +75,61 @@ public class APIBuilderTest {
 		);
 	}
 
+	/**
+	 * Test that subargs for varargs works
+	 */
+	@Test
+	public void testSubArgs() {
+		Varargs result = table.get("subArgs").invoke(new LuaValue[]{
+			LuaValue.valueOf("2"), LuaValue.valueOf(3), // Normal args
+			LuaValue.valueOf("Hello"), LuaValue.valueOf("World") // Subargs
+		});
+
+		assertEquals(result.arg(1).toint(), 3);
+		assertEquals(result.arg(2).toint(), 2);
+		assertEquals(result.arg(3).toString(), "Hello");
+		assertEquals(result.arg(4).toString(), "World");
+	}
+
+	@Test
+	public void testReturnVarargs() {
+		Varargs result = table.get("returnVarargs").invoke();
+		assertEquals(result.arg(1).toint(), 1);
+		assertEquals(result.arg(2).toint(), 4);
+		assertEquals(result.arg(3).toint(), 9);
+	}
+
+	@Test
+	public void testReturnTable() {
+		LuaTable result = (LuaTable) table.get("returnTable").invoke().arg1();
+		assertEquals(result.get(1).toint(), 1);
+		assertEquals(result.get(2).toint(), 4);
+		assertEquals(result.get(3).toint(), 9);
+	}
+
+	@Test
+	public void testReturnLuaNumberArray() {
+		LuaTable result = (LuaTable) table.get("returnLuaNumberArray").invoke().arg1();
+		assertEquals(result.get(1).toint(), 1);
+		assertEquals(result.get(2).toint(), 0);
+		assertEquals(result.get(3).toint(), -1);
+	}
+
+	@Test
+	public void testStrictMode() {
+		LuaValue strictMode = table.get("strictMode");
+		LuaValue stringNumber = LuaValue.valueOf("2");
+		LuaValue normalNumber = LuaValue.valueOf(2);
+
+		strictMode.invoke(normalNumber, normalNumber);
+		strictMode.invoke(normalNumber, stringNumber);
+
+		ExpectException.expect(LuaError.class, "Expected number, number",
+			() -> strictMode.invoke(stringNumber, stringNumber),
+			() -> strictMode.invoke(stringNumber, normalNumber)
+		);
+	}
+
 	@SuppressWarnings("UnusedDeclaration")
 	@LuaAPI({"embedded", "embed"})
 	public static class EmbedClass {
@@ -102,6 +155,36 @@ public class APIBuilderTest {
 		@LuaFunction(value = {"one", "two", "varArgsLuaReturn"})
 		public Varargs varArgsLuaReturn(Varargs args) {
 			return args;
+		}
+
+		@LuaFunction
+		public Varargs subArgs(int a, LuaNumber b, Varargs args) {
+			return LuaValue.varargsOf(b, LuaValue.valueOf(a), args);
+		}
+
+		@LuaFunction
+		public int[] returnTable() {
+			return new int[]{1, 4, 9};
+		}
+
+		@LuaFunction(isVarArgs = true)
+		public int[] returnVarargs() {
+			return new int[]{1, 4, 9};
+		}
+
+		@LuaFunction
+		public LuaNumber[] returnLuaNumberArray() {
+			return new LuaNumber[]{
+				LuaNumber.ONE,
+				LuaNumber.ZERO,
+				LuaNumber.MINUSONE,
+			};
+		}
+
+		@LuaFunction
+		@ValidationClass(StrictValidator.class)
+		public void strictMode(int a, @ValidationClass(DefaultLuaValidator.class) int b) {
+
 		}
 	}
 }
