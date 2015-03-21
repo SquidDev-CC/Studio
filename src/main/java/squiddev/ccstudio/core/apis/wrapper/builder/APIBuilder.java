@@ -146,6 +146,8 @@ public class APIBuilder {
 			}
 		}
 
+		if(methods.size() == 0) throw new BuilderException("No LuaFunction methods", reflection);
+
 		if (reflection.isAnnotationPresent(LuaAPI.class)) {
 			names = reflection.getAnnotation(LuaAPI.class).value();
 			// If we have the LuaAPI annotation then

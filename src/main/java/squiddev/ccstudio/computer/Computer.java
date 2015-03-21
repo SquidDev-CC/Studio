@@ -112,6 +112,7 @@ public class Computer {
 		addAPI(new BitAPI());
 		addAPI(new TerminalAPI(output));
 		addAPI(new FileSystemAPI(this));
+		addAPI(new HttpAPI(this));
 		addAPI(new PeripheralAPI());
 	}
 
@@ -394,6 +395,16 @@ public class Computer {
 	 */
 	public void queueEvent(String name, Varargs args) {
 		events.add(new ComputerEvent(this, name, args));
+	}
+
+	/**
+	 * Add a {@see ComputerEvent}
+	 *
+	 * @param name The name of the event
+	 * @param args The arguments to pass
+	 */
+	public void queueEvent(String name, LuaValue... args) {
+		events.add(new ComputerEvent(this, name, LuaValue.varargsOf(args)));
 	}
 
 	/**
