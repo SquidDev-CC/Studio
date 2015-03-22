@@ -400,6 +400,15 @@ public class JavaBuilderRewrite {
 		main.visitLabel(end);
 		main.visitMaxs(0, 0);
 
+		// Add upvalue & local value slot names
+		for (Map.Entry<Integer, Integer> slot : plainSlotVars.entrySet()) {
+			main.visitLocalVariable(PREFIX_LOCAL_SLOT + "_" + slot.getKey(), TYPE_LUAVALUE, null, start, end, slot.getValue());
+		}
+
+		for (Map.Entry<Integer, Integer> slot : upvalueSlotVars.entrySet()) {
+			main.visitLocalVariable(PREFIX_UPVALUE_SLOT + "_" + slot.getKey(), TYPE_LOCALUPVALUE, null, start, end, slot.getValue());
+		}
+
 		main.visitEnd();
 
 		writer.visitEnd();

@@ -18,6 +18,7 @@ public class DumpInstructions {
 
 	public static enum ArgType {
 		Unused,
+		General,
 		Register,
 		Constant,
 		ConstantOrRegister,
@@ -26,44 +27,44 @@ public class DumpInstructions {
 	}
 
 	protected static final ArgType[][] ARG_TYPES = {
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Unused},    // OP_MOVE
-		new ArgType[]{ArgType.Register, ArgType.Constant, ArgType.Unused},    // OP_LOADK
-		new ArgType[]{ArgType.Register, ArgType.Unused, ArgType.Unused},    // OP_LOADBOOL
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Register},    // OP_LOADNIL
-		new ArgType[]{ArgType.Register, ArgType.Upvalue, ArgType.Unused},    // OP_GETUPVAL
-		new ArgType[]{ArgType.Register, ArgType.Constant, ArgType.Unused},    // OP_GETGLOBAL
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister},    // OP_GETTABLE
-		new ArgType[]{ArgType.Register, ArgType.Constant, ArgType.Unused},    // OP_SETGLOBAL
-		new ArgType[]{ArgType.Register, ArgType.Upvalue, ArgType.Unused},    // OP_SETUPVAL
-		new ArgType[]{ArgType.Register, ArgType.ConstantOrRegister, ArgType.ConstantOrRegister},    // OP_SETTABLE
-		new ArgType[]{ArgType.Register, ArgType.Unused, ArgType.Unused},    // OP_NEWTABLE
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister},    // OP_SELF
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister},    // OP_ADD
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister},    // OP_SUB
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister},    // OP_MUL
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister},    // OP_DIV
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister},    // OP_MOD
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister},    // OP_POW
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Unused},    // OP_UNM
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Unused},    // OP_NOT
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Unused},    // OP_LEN
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Register},    // OP_CONCAT
-		new ArgType[]{ArgType.Unused, ArgType.JumpDistance, ArgType.Unused},    // OP_JMP
-		new ArgType[]{ArgType.Register, ArgType.ConstantOrRegister, ArgType.ConstantOrRegister},    // OP_EQ
-		new ArgType[]{ArgType.Register, ArgType.ConstantOrRegister, ArgType.ConstantOrRegister},    // OP_LT
-		new ArgType[]{ArgType.Register, ArgType.ConstantOrRegister, ArgType.ConstantOrRegister},    // OP_LE
-		new ArgType[]{ArgType.Register, ArgType.Unused, ArgType.Register},    // OP_TEST
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Register},    // OP_TESTSET
-		new ArgType[]{ArgType.Register, ArgType.Unused, ArgType.Unused},    // OP_CALL
-		new ArgType[]{ArgType.Register, ArgType.Unused, ArgType.Unused},    // OP_TAILCALL
-		new ArgType[]{ArgType.Register, ArgType.Unused, ArgType.Unused},    // OP_RETURN
-		new ArgType[]{ArgType.Register, ArgType.JumpDistance, ArgType.Unused},    // OP_FORLOOP
-		new ArgType[]{ArgType.Register, ArgType.JumpDistance, ArgType.Unused},    // OP_FORPREP
-		new ArgType[]{ArgType.Register, ArgType.JumpDistance, ArgType.Unused},    // OP_TFORLOOP
-		new ArgType[]{ArgType.Register, ArgType.Unused, ArgType.Unused},    // OP_SETLIST
-		new ArgType[]{ArgType.Register, ArgType.Unused, ArgType.Unused},    // OP_CLOSE
-		new ArgType[]{ArgType.Register, ArgType.Unused, ArgType.Unused},    // OP_CLOSURE
-		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Unused},    // OP_VARARG
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Unused}, // OP_MOVE
+		new ArgType[]{ArgType.Register, ArgType.Constant, ArgType.Unused}, // OP_LOADK
+		new ArgType[]{ArgType.Register, ArgType.General, ArgType.General}, // OP_LOADBOOL
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Register}, // OP_LOADNIL
+		new ArgType[]{ArgType.Register, ArgType.Upvalue, ArgType.Unused}, // OP_GETUPVAL
+		new ArgType[]{ArgType.Register, ArgType.Constant, ArgType.Unused}, // OP_GETGLOBAL
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister}, // OP_GETTABLE
+		new ArgType[]{ArgType.Register, ArgType.Constant, ArgType.Unused}, // OP_SETGLOBAL
+		new ArgType[]{ArgType.Register, ArgType.Upvalue, ArgType.Unused}, // OP_SETUPVAL
+		new ArgType[]{ArgType.Register, ArgType.ConstantOrRegister, ArgType.ConstantOrRegister}, // OP_SETTABLE
+		new ArgType[]{ArgType.Register, ArgType.General, ArgType.General}, // OP_NEWTABLE
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister}, // OP_SELF
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister}, // OP_ADD
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister}, // OP_SUB
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister}, // OP_MUL
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister}, // OP_DIV
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister}, // OP_MOD
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.ConstantOrRegister}, // OP_POW
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Unused}, // OP_UNM
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Unused}, // OP_NOT
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Unused}, // OP_LEN
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Register}, // OP_CONCAT
+		new ArgType[]{ArgType.Unused, ArgType.JumpDistance, ArgType.Unused}, // OP_JMP
+		new ArgType[]{ArgType.Register, ArgType.ConstantOrRegister, ArgType.ConstantOrRegister}, // OP_EQ
+		new ArgType[]{ArgType.Register, ArgType.ConstantOrRegister, ArgType.ConstantOrRegister}, // OP_LT
+		new ArgType[]{ArgType.Register, ArgType.ConstantOrRegister, ArgType.ConstantOrRegister}, // OP_LE
+		new ArgType[]{ArgType.Register, ArgType.Unused, ArgType.Register}, // OP_TEST
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Register}, // OP_TESTSET
+		new ArgType[]{ArgType.Register, ArgType.General, ArgType.General}, // OP_CALL
+		new ArgType[]{ArgType.Register, ArgType.General, ArgType.General}, // OP_TAILCALL
+		new ArgType[]{ArgType.Register, ArgType.General, ArgType.Unused}, // OP_RETURN
+		new ArgType[]{ArgType.Register, ArgType.JumpDistance, ArgType.Unused}, // OP_FORLOOP
+		new ArgType[]{ArgType.Register, ArgType.JumpDistance, ArgType.Unused}, // OP_FORPREP
+		new ArgType[]{ArgType.Register, ArgType.JumpDistance, ArgType.General}, // OP_TFORLOOP
+		new ArgType[]{ArgType.Register, ArgType.General, ArgType.General}, // OP_SETLIST
+		new ArgType[]{ArgType.Register, ArgType.Unused, ArgType.Unused}, // OP_CLOSE
+		new ArgType[]{ArgType.Register, ArgType.General, ArgType.Unused}, // OP_CLOSURE
+		new ArgType[]{ArgType.Register, ArgType.Register, ArgType.Unused}, // OP_VARARG
 	};
 
 	protected String indent = "";
@@ -184,7 +185,7 @@ public class DumpInstructions {
 		} else if (type == ArgType.Upvalue) {
 			return "up-" + arg + "";
 		} else if (type == ArgType.JumpDistance) {
-			return "1+" + arg;
+			return "+" + arg;
 		} else if (type == ArgType.Unused) {
 			return "";
 		}

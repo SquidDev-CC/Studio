@@ -35,7 +35,7 @@ public class JavaBuilderTest {
 			{"RecursiveTrace"},
 			{"TailCall"},
 			{"StringDump"},
-			{"VBenchmark"},
+			{"EdgeCases"},
 		};
 
 		return Arrays.asList(tests);
