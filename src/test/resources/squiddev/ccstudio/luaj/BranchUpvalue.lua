@@ -1,4 +1,4 @@
--- Upvalues near branchesare buggy
+-- Upvalues near branches were buggy
 
 -- The upvalue creation is injected before a label, so is never executed under some cicumstances,
 -- an so compilation fails as the slot is empty

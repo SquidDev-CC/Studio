@@ -67,8 +67,4 @@ test {
 	filter {
 		includeTestsMatching "squidev.*"
 	}
-
-	beforeTest { descriptor ->
-		logger.lifecycle("Running test: " + descriptor)
-	}
 }

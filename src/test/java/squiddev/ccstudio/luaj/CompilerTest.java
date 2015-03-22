@@ -1,11 +1,15 @@
 package squiddev.ccstudio.luaj;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.luaj.vm2.LoadState;
 import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.Varargs;
+import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.ThreeArgFunction;
+import org.luaj.vm2.lib.VarArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
 import squiddev.ccstudio.core.luaj.luajc.LuaJC;
 
@@ -15,7 +19,7 @@ import java.util.Collection;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-public class JavaBuilderTest {
+public class CompilerTest {
 	/**
 	 * Fetch a list of tests to run
 	 *
@@ -36,6 +40,15 @@ public class JavaBuilderTest {
 			{"TailCall"},
 			{"StringDump"},
 			{"EdgeCases"},
+
+			{"fragment/ForLoopParamUpvalues"},
+			{"fragment/VarVarargsUseArg"},
+			{"fragment/VarVarargsUseBoth"},
+			{"fragment/ArgVarargsUseBoth"},
+			{"fragment/ArgParamUseNone"},
+			{"fragment/SetlistVarargs"},
+			{"fragment/SelfOp"},
+			{"fragment/SetListWithOffsetAndVarargs"},
 		};
 
 		return Arrays.asList(tests);
@@ -44,23 +57,37 @@ public class JavaBuilderTest {
 	protected String name;
 	protected LuaValue globals;
 
-	public JavaBuilderTest(String name) {
+	public CompilerTest(String name) {
+		this.name = name;
+	}
+
+	@Before
+	public void setup() {
 		globals = JsePlatform.debugGlobals();
 		globals.set("assertEquals", new AssertFunction());
-		LuaJC.install();
-
-		this.name = name;
+		globals.set("assertMany", new AssertManyFunction());
 	}
 
 	/**
 	 * Get the Lua test and run it
 	 */
 	@Test
-	public void runLua() throws Exception {
+	public void testLuaJC() throws Exception {
+		LuaJC.install();
+		run();
+	}
+
+	@Test
+	public void testLuaC() throws Exception {
+		LuaC.install();
+		run();
+	}
+
+	protected void run() throws Exception {
 		LoadState.load(getClass().getResourceAsStream("/squiddev/ccstudio/luaj/" + name + ".lua"), name + ".lua", globals).invoke();
 	}
 
-	class AssertFunction extends ThreeArgFunction {
+	private class AssertFunction extends ThreeArgFunction {
 		@Override
 		public LuaValue call(LuaValue expected, LuaValue actual, LuaValue message) {
 			String msg = message.toString();
@@ -70,6 +97,23 @@ public class JavaBuilderTest {
 
 			assertEquals(msg, expected.typename(), actual.typename());
 			assertEquals(msg, expected.tojstring(), actual.tojstring());
+
+			return LuaValue.NONE;
+		}
+	}
+
+	private class AssertManyFunction extends VarArgFunction {
+		@Override
+		public Varargs invoke(Varargs args) {
+			int nArgs = args.narg() / 2;
+			for (int i = 1; i <= nArgs; i++) {
+				LuaValue expected = args.arg(i);
+				LuaValue actual = args.arg(i + nArgs);
+
+				assertEquals("Type mismatch at arg #" + i, expected.typename(), actual.typename());
+				assertEquals("Value mismatch at arg #" + i, expected.tojstring(), actual.tojstring());
+			}
+
 
 			return LuaValue.NONE;
 		}
