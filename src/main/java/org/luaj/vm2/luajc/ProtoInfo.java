@@ -6,6 +6,8 @@ import org.luaj.vm2.Prototype;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Prototype information for static single-assignment analysis
@@ -21,6 +23,8 @@ public class ProtoInfo {
 	public final VarInfo[][] vars;        // Each variable
 	public final UpvalInfo[] upvals;      // from outer scope
 	public final UpvalInfo[][] openups;   // per slot, upvalues allocated by this prototype
+
+	public final Set<VarInfo> phis = new HashSet<>();
 
 	public ProtoInfo(Prototype p, String name) {
 		this(p, name, null);
@@ -136,33 +140,16 @@ public class ProtoInfo {
 				} else if (nprev == 1) {
 					var = v[slot][b0.prev[0].pc1];
 				} else {
-					/*
-						We test if all the previous blocks link to the same variable.
-						If this is the case then we use the previous variable.
-						This is to prevent variables being defined as 'not used'
-						(See EdgeCases.lua)
-					*/
-					boolean blocksMatch = true;
 					for (int i = 0; i < nprev; i++) {
-						BasicBlock bp = b0.prev[i];
-						VarInfo blockVar = v[slot][bp.pc1];
-
-						if (blockVar == VarInfo.INVALID) {
+						if (v[slot][b0.prev[i].pc1] == VarInfo.INVALID) {
 							var = VarInfo.INVALID;
 							break;
-						} else if (blocksMatch) {
-							// Check same as all other variables in linking blocks
-							if (var == null) {
-								var = blockVar;
-							} else if (blockVar != var) {
-								blocksMatch = false;
-								var = null;
-							}
 						}
 					}
 				}
 				if (var == null) {
 					var = VarInfo.PHI(this, slot, b0.pc0);
+					phis.add(var);
 				}
 				v[slot][b0.pc0] = var;
 			}
@@ -407,6 +394,7 @@ public class ProtoInfo {
 	}
 
 	private void replaceTrivialPhiVariables() {
+		Set<VarInfo> phis = this.phis;
 		for (BasicBlock b0 : blocklist) {
 			for (int slot = 0; slot < prototype.maxstacksize; slot++) {
 				VarInfo vold = vars[slot][b0.pc0];
@@ -414,7 +402,15 @@ public class ProtoInfo {
 				if (vnew != null) {
 					substituteVariable(slot, vold, vnew);
 				}
+
+				phis.remove(vold);
 			}
+		}
+
+		// Some phi variables are overwritten resulting in slots not being assigned
+		// https://github.com/SquidDev-CC/Studio/pull/13
+		for (VarInfo phi : phis) {
+			phi.resolvePhiVariableValues();
 		}
 	}
 
