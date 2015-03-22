@@ -29,7 +29,7 @@ import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.luajc.LuaJCRewrite;
+import squiddev.ccstudio.core.luaj.luajc.LuaJC;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -73,7 +73,7 @@ public class FragmentTest {
 				InputStream is = new ByteArrayInputStream(script.getBytes("UTF-8"));
 				LuaValue chunk;
 				if (isLuaJC) {
-					chunk = LuaJCRewrite.getInstance().load(is, name, _G);
+					chunk = LuaJC.getInstance().load(is, name, _G);
 				} else {
 					chunk = LuaC.instance.load(is, name, _G);
 				}

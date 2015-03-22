@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009 Luaj.org. All rights reserved.
+ * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,53 +19,52 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
-package org.luaj.vm2.luajc.function;
+package squiddev.ccstudio.core.luaj.luajc.function;
 
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 
 /**
- * Abstract base class for compiled function implementations that take two arguments and
+ * Abstract base class for compiled function implementations that take one argument and
  * return one value.
  * <p>
- * Subclasses need only implement {@link LuaValue#call(LuaValue, LuaValue, LuaValue)} to complete this class,
+ * Subclasses need only implement {@link LuaValue#call(LuaValue)} to complete this class,
  * simplifying development.
  * All other uses of {@link #call()}, {@link #invoke(Varargs)},etc,
  * are routed through this method by this class,
  * dropping or extending arguments with {@code nil} values as required.
  * <p>
- * If more or less than three arguments are required,
+ * If more than one argument are required, or no arguments are required,
  * or variable argument or variable return values,
  * then use one of the related function
- * {@link ZeroArgFunction}, {@link OneArgFunction}, {@link TwoArgFunction}, or {@link VarArgFunction}.
+ * {@link ZeroArgFunction}, {@link TwoArgFunction}, {@link ThreeArgFunction}, or {@link VarArgFunction}.
  * <p>
  * See {@link LuaCompiledFunction} for more information on implementation libraries and library functions.
  *
- * @see #call(LuaValue, LuaValue, LuaValue)
+ * @see #call(LuaValue)
  * @see LuaCompiledFunction
  * @see ZeroArgFunction
- * @see OneArgFunction
  * @see TwoArgFunction
+ * @see ThreeArgFunction
  * @see VarArgFunction
  */
-abstract public class ThreeArgFunction extends LuaCompiledFunction {
+abstract public class OneArgFunction extends LuaCompiledFunction {
 
-	abstract public LuaValue call(LuaValue arg1, LuaValue arg2, LuaValue arg3);
+	abstract public LuaValue call(LuaValue arg);
 
 	public final LuaValue call() {
-		return call(NIL, NIL, NIL);
+		return call(NIL);
 	}
 
-	public final LuaValue call(LuaValue arg) {
-		return call(arg, NIL, NIL);
+	public final LuaValue call(LuaValue arg1, LuaValue arg2) {
+		return call(arg1);
 	}
 
-	public LuaValue call(LuaValue arg1, LuaValue arg2) {
-		return call(arg1, arg2, NIL);
+	public LuaValue call(LuaValue arg1, LuaValue arg2, LuaValue arg3) {
+		return call(arg1);
 	}
 
 	public Varargs invoke(Varargs varargs) {
-		return call(varargs.arg1(), varargs.arg(2), varargs.arg(3));
+		return call(varargs.arg1());
 	}
-
 }

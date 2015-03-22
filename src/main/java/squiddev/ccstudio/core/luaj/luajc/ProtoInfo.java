@@ -1,4 +1,4 @@
-package org.luaj.vm2.luajc;
+package squiddev.ccstudio.core.luaj.luajc;
 
 import org.luaj.vm2.Lua;
 import org.luaj.vm2.Print;
@@ -21,8 +21,8 @@ public class ProtoInfo {
 	public final BasicBlock[] blocklist;  // blocks in breadth-first order
 	public final VarInfo[] params;        // Parameters and initial values of stack variables
 	public final VarInfo[][] vars;        // Each variable
-	public final UpvalInfo[] upvals;      // from outer scope
-	public final UpvalInfo[][] openups;   // per slot, upvalues allocated by this prototype
+	public final UpvalueInfo[] upvals;      // from outer scope
+	public final UpvalueInfo[][] openups;   // per slot, upvalues allocated by this prototype
 
 	public final Set<VarInfo> phis = new HashSet<>();
 
@@ -30,7 +30,7 @@ public class ProtoInfo {
 		this(p, name, null);
 	}
 
-	private ProtoInfo(Prototype p, String name, UpvalInfo[] u) {
+	private ProtoInfo(Prototype p, String name, UpvalueInfo[] u) {
 		this.name = name;
 		this.prototype = p;
 		this.upvals = u;
@@ -52,7 +52,7 @@ public class ProtoInfo {
 		replaceTrivialPhiVariables();
 
 		// find upvalues, create sub-prototypes
-		this.openups = new UpvalInfo[p.maxstacksize][];
+		this.openups = new UpvalueInfo[p.maxstacksize][];
 		findUpvalues();
 	}
 
@@ -437,7 +437,7 @@ public class ProtoInfo {
 			if (Lua.GET_OPCODE(code[pc]) == Lua.OP_CLOSURE) {
 				int bx = Lua.GETARG_Bx(code[pc]);
 				Prototype newp = prototype.p[bx];
-				UpvalInfo[] newu = newp.nups > 0 ? new UpvalInfo[newp.nups] : null;
+				UpvalueInfo[] newu = newp.nups > 0 ? new UpvalueInfo[newp.nups] : null;
 				String newname = name + "$" + bx;
 				for (int j = 0; j < newp.nups; ++j) {
 					int i = code[++pc];
@@ -456,14 +456,14 @@ public class ProtoInfo {
 		}
 	}
 
-	private UpvalInfo findOpenUp(int pc, int slot) {
+	private UpvalueInfo findOpenUp(int pc, int slot) {
 		if (openups[slot] == null) {
-			openups[slot] = new UpvalInfo[prototype.code.length];
+			openups[slot] = new UpvalueInfo[prototype.code.length];
 		}
 		if (openups[slot][pc] != null) {
 			return openups[slot][pc];
 		}
-		UpvalInfo u = new UpvalInfo(this, pc, slot);
+		UpvalueInfo u = new UpvalueInfo(this, pc, slot);
 		for (int i = 0, n = prototype.code.length; i < n; ++i) {
 			if (vars[slot][i] != null && vars[slot][i].upvalue == u) {
 				openups[slot][i] = u;
@@ -496,7 +496,7 @@ public class ProtoInfo {
 		return v.isreferenced;
 	}
 
-	public boolean isReadWriteUpvalue(UpvalInfo u) {
+	public boolean isReadWriteUpvalue(UpvalueInfo u) {
 		return u.rw;
 	}
 }

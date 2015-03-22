@@ -1,4 +1,4 @@
-package org.luaj.vm2.luajc;
+package squiddev.ccstudio.core.luaj.luajc;
 
 import org.luaj.vm2.LuaFunction;
 import org.luaj.vm2.LuaValue;
@@ -31,24 +31,24 @@ import java.util.Map;
  * THE SOFTWARE.
  * ****************************************************************************
  */
-public class JavaLoaderRewrite extends ClassLoader {
+public class JavaLoader extends ClassLoader {
 
 	private final LuaValue env;
 
 	private Map<String, byte[]> unloaded = new HashMap<>();
 	private Map<String, Prototype> prototypes = new HashMap<>();
 
-	public JavaLoaderRewrite(LuaValue env) {
-		super(JavaLoaderRewrite.class.getClassLoader());
+	public JavaLoader(LuaValue env) {
+		super(JavaLoader.class.getClassLoader());
 		this.env = env;
 	}
 
 	public LuaFunction load(Prototype p, String className, String filename) {
-		JavaGenRewrite jg = new JavaGenRewrite(p, className, filename);
+		JavaGen jg = new JavaGen(p, className, filename);
 		return load(jg);
 	}
 
-	public LuaFunction load(JavaGenRewrite jg) {
+	public LuaFunction load(JavaGen jg) {
 		include(jg);
 		return load(jg.className);
 	}
@@ -64,7 +64,7 @@ public class JavaLoaderRewrite extends ClassLoader {
 		}
 	}
 
-	public void include(JavaGenRewrite jg) {
+	public void include(JavaGen jg) {
 		unloaded.put(jg.className, jg.bytecode);
 		prototypes.put(jg.className, jg.prototype);
 
@@ -84,7 +84,7 @@ public class JavaLoaderRewrite extends ClassLoader {
 
 			// Attempt to set the prototype object to this class
 			try {
-				generatedClass.getField(JavaBuilderRewrite.PROTOTYPE_NAME).set(null, prototypes.get(className));
+				generatedClass.getField(JavaBuilder.PROTOTYPE_NAME).set(null, prototypes.get(className));
 			} catch (ReflectiveOperationException e) {
 				e.printStackTrace();
 			}

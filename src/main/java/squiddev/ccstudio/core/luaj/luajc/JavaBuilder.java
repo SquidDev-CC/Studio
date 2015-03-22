@@ -20,14 +20,14 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-package org.luaj.vm2.luajc;
+package squiddev.ccstudio.core.luaj.luajc;
 
 import org.luaj.vm2.*;
-import org.luaj.vm2.luajc.function.*;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
+import squiddev.ccstudio.core.luaj.luajc.function.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +36,7 @@ import static org.objectweb.asm.Opcodes.*;
 import static squiddev.ccstudio.core.asm.AsmUtils.TinyMethod;
 import static squiddev.ccstudio.core.asm.AsmUtils.constantOpcode;
 
-public class JavaBuilderRewrite {
+public class JavaBuilder {
 	public static final String PROTOTYPE_NAME = "PROTOTYPE";
 
 	protected static final String TYPE_LOCALUPVALUE = Type.getDescriptor(LuaValue[].class);
@@ -227,7 +227,7 @@ public class JavaBuilderRewrite {
 	 */
 	protected int pc = 0;
 
-	public JavaBuilderRewrite(ProtoInfo pi, String className, String filename) {
+	public JavaBuilder(ProtoInfo pi, String className, String filename) {
 		this.pi = pi;
 		this.p = pi.prototype;
 

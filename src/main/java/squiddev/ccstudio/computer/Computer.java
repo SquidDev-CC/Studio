@@ -10,12 +10,12 @@ import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.ZeroArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.luajc.LuaJCRewrite;
 import squiddev.ccstudio.computer.api.*;
 import squiddev.ccstudio.core.Config;
 import squiddev.ccstudio.core.apis.CCAPI;
 import squiddev.ccstudio.core.apis.wrapper.LuaAPI;
 import squiddev.ccstudio.core.apis.wrapper.builder.APIClassLoader;
+import squiddev.ccstudio.core.luaj.luajc.LuaJC;
 import squiddev.ccstudio.core.utils.FileSystemUtilities;
 import squiddev.ccstudio.output.IOutput;
 
@@ -151,7 +151,7 @@ public class Computer {
 
 		// Sadly this isn't a local thing we can't really customise this
 		if (config.useLuaJC) {
-			LuaJCRewrite.install();
+			LuaJC.install();
 		}
 
 		LuaValue coroutineLib = globals.get("coroutine");

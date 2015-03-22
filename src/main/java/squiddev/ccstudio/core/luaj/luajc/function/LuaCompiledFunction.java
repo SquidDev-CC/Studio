@@ -19,14 +19,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
-package org.luaj.vm2.luajc.function;
+package squiddev.ccstudio.core.luaj.luajc.function;
 
 import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaFunction;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Prototype;
-import org.luaj.vm2.luajc.IGetSource;
-import org.luaj.vm2.luajc.JavaBuilderRewrite;
+import squiddev.ccstudio.core.luaj.luajc.IGetSource;
+import squiddev.ccstudio.core.luaj.luajc.JavaBuilder;
 
 /**
  * Subclass of {@link LuaFunction} common to LuaJC compiled functions.
@@ -86,7 +86,7 @@ public abstract class LuaCompiledFunction extends LuaFunction implements IGetSou
 	@Override
 	public Prototype getPrototype() {
 		try {
-			return (Prototype) getClass().getField(JavaBuilderRewrite.PROTOTYPE_NAME).get(null);
+			return (Prototype) getClass().getField(JavaBuilder.PROTOTYPE_NAME).get(null);
 		} catch (Exception e) {
 			throw new LuaError(e.getMessage());
 		}
