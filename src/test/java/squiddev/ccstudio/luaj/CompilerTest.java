@@ -27,7 +27,7 @@ public class CompilerTest {
 	 */
 	@Parameterized.Parameters(name = "{0} ({index})")
 	public static Collection<Object[]> getLua() {
-		Object[][] tests = {
+		return Arrays.asList(new Object[][]{
 			{"NForLoop"},
 			{"WhileLoop"},
 			{"DoBlock"},
@@ -49,9 +49,45 @@ public class CompilerTest {
 			{"fragment/SetlistVarargs"},
 			{"fragment/SelfOp"},
 			{"fragment/SetListWithOffsetAndVarargs"},
-		};
+			{"fragment/MultiAssign"},
+			{"fragment/Upvalues"},
+			{"fragment/NeedsArgAndHasArg"},
+			{"fragment/NonAsciiStringLiterals"},
+			{"fragment/ControlCharStringLiterals"},
+			{"fragment/LoopVarNames"},
+			{"fragment/ForLoops"},
+			{"fragment/LocalFunctionDeclarations"},
+			{"fragment/NilsInTableConstructor"},
+			{"fragment/UnreachableCode"},
+			{"fragment/VarargsWithParameters"},
+			{"fragment/NoReturnValuesPlainCall"},
+			{"fragment/VarargsInTableConstructor"},
+			{"fragment/VarargsInFirstArg"},
+			{"fragment/SetUpvalueTableInitializer"},
+			{"fragment/LoadNilUpvalue"},
+			{"fragment/UpvalueClosure"},
+			{"fragment/UninitializedUpvalue"},
+			{"fragment/TestOpUpvalues"},
+			{"fragment/TestSimpleBinops"},
+			{"fragment/NumericForUpvalues"},
+			{"fragment/NumericForUpvalues2"},
+			{"fragment/ReturnUpvalue"},
+			{"fragment/UninitializedAroundBranch"},
+			{"fragment/LoadedNilUpvalue"},
+			{"fragment/UpvalueInFirstSlot"},
+			{"fragment/ReadOnlyAndReadWriteUpvalues"},
+			{"fragment/NestedUpvalues"},
+			{"fragment/LoadBool"},
+			{"fragment/BasicForLoop"},
+			{"fragment/GenericForMultipleValues"},
+			{"fragment/AssignReferUpvalues"},
+			{"fragment/SimpleRepeatUntil"},
+			{"fragment/LoopVarUpvalues"},
+			{"fragment/PhiVarUpvalue"},
+			{"fragment/UpvaluesInElseClauses"},
 
-		return Arrays.asList(tests);
+
+		});
 	}
 
 	protected String name;
@@ -95,8 +131,8 @@ public class CompilerTest {
 				msg = "(No message)";
 			}
 
-			assertEquals(msg, expected.typename(), actual.typename());
 			assertEquals(msg, expected.tojstring(), actual.tojstring());
+			assertEquals(msg, expected.typename(), actual.typename());
 
 			return LuaValue.NONE;
 		}
