@@ -10,9 +10,13 @@ import org.luaj.vm2.Varargs;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.ThreeArgFunction;
 import org.luaj.vm2.lib.VarArgFunction;
+import org.luaj.vm2.lib.jse.JseBaseLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
 import squiddev.ccstudio.core.luaj.luajc.LuaJC;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -85,8 +89,6 @@ public class CompilerTest {
 			{"fragment/LoopVarUpvalues"},
 			{"fragment/PhiVarUpvalue"},
 			{"fragment/UpvaluesInElseClauses"},
-
-
 		});
 	}
 
@@ -100,6 +102,15 @@ public class CompilerTest {
 	@Before
 	public void setup() {
 		globals = JsePlatform.debugGlobals();
+
+		JseBaseLib lib = new JseBaseLib();
+		lib.STDOUT = new PrintStream(new OutputStream() {
+			@Override
+			public void write(int b) throws IOException {
+			}
+		});
+
+		globals.load(lib);
 		globals.set("assertEquals", new AssertFunction());
 		globals.set("assertMany", new AssertManyFunction());
 	}

@@ -241,9 +241,16 @@ public class Computer {
 	}
 
 	/**
-	 * Start the computer thread
+	 * Start the computer thread with the default bios
 	 */
 	public void start() {
+		start(null);
+	}
+
+	/**
+	 * Start the computer thread
+	 */
+	public void start(final InputStream bios) {
 		synchronized (events) {
 			if (mainThread.getState() != ComputerThread.State.STOPPED) {
 				throw new IllegalStateException("Computer is running");
@@ -253,10 +260,14 @@ public class Computer {
 				@Override
 				public void run() {
 					setup();
-					loadBios();
+					if (bios == null) {
+						loadBios();
+					} else {
+						loadBios(bios);
+					}
 					Varargs result = mainCoroutine.resume(LuaValue.NONE);
-					if(mainCoroutine.getStatus().equals("dead")) {
-						System.out.println("Coroutine died " + result.arg(2).toString());
+					if (mainCoroutine.getStatus().equals("dead")) {
+						throw new LuaError("Coroutine died: " + result.arg(2).optjstring("<no message>"));
 					}
 				}
 			});
