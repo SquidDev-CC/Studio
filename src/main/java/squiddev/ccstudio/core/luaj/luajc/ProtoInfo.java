@@ -64,13 +64,13 @@ public class ProtoInfo {
 
 		// upvalues from outer scopes
 		for (int i = 0, n = (upvals != null ? upvals.length : 0); i < n; i++) {
-			sb.append(" up[").append(i).append("]: ").append(upvals[i]).append("\n");
+			sb.append("\tup[").append(i).append("]: ").append(upvals[i]).append("\n");
 		}
 
 		// basic blocks
 		for (BasicBlock b : blocklist) {
 			int pc0 = b.pc0;
-			sb.append("  block ").append(b.toString());
+			sb.append("\tblock ").append(b.toString());
 			appendOpenUps(sb, -1);
 
 			// instructions
@@ -80,7 +80,7 @@ public class ProtoInfo {
 				appendOpenUps(sb, pc);
 
 				// opcode
-				sb.append("     ");
+				sb.append("\t\t");
 				for (int j = 0; j < prototype.maxstacksize; j++) {
 					VarInfo v = vars[j][pc];
 					String u = (v == null ? "" : v.upvalue != null ? !v.upvalue.rw ? "[C] " : (v.allocupvalue && v.pc == pc ? "[*] " : "[]  ") : "    ");
@@ -114,7 +114,7 @@ public class ProtoInfo {
 		for (int j = 0; j < prototype.maxstacksize; j++) {
 			VarInfo v = (pc < 0 ? params[j] : vars[j][pc]);
 			if (v != null && v.pc == pc && v.allocupvalue) {
-				sb.append("    open: ").append(v.upvalue).append("\n");
+				sb.append("\t\topen: ").append(v.upvalue).append("\n");
 			}
 		}
 	}
