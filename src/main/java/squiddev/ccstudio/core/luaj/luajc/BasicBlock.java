@@ -3,16 +3,39 @@ package squiddev.ccstudio.core.luaj.luajc;
 import org.luaj.vm2.Lua;
 import org.luaj.vm2.Prototype;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 
 public class BasicBlock {
-	int pc0, pc1;        // range of program counter values for the block
-	BasicBlock[] prev;  // previous basic blocks (0-n of these)
-	BasicBlock[] next;  // next basic blocks (0, 1, or 2 of these)
-	boolean islive;     // true if this block is used
+	/**
+	 * Start PC of the block
+	 */
+	protected int pc0;
 
-	public BasicBlock(Prototype p, int pc0) {
-		this.pc0 = this.pc1 = pc0;
+	/**
+	 * End PC of the block
+	 */
+	protected int pc1;
+
+	/**
+	 * Previous blocks (blocks that jump to this one)
+	 */
+	protected BasicBlock[] prev;
+
+	/**
+	 * Following blocks (blocks that are jumped to from this one)
+	 */
+	protected BasicBlock[] next;
+
+	/**
+	 * If this block is used
+	 */
+	protected boolean isLive;
+
+	public BasicBlock(int pc) {
+		pc0 = pc1 = pc;
 	}
 
 	public String toString() {
@@ -36,75 +59,135 @@ public class BasicBlock {
 		return sb.toString();
 	}
 
+	/**
+	 * Find all blocks in a prototype
+	 *
+	 * @param p The prototype to find blocks in
+	 * @return The list of resulting blocks
+	 */
 	public static BasicBlock[] findBasicBlocks(Prototype p) {
-
 		// mark beginnings, endings
 		final int n = p.code.length;
-		final boolean[] isbeg = new boolean[n];
-		final boolean[] isend = new boolean[n];
-		isbeg[0] = true;
-		BranchVisitor bv = new BranchVisitor(isbeg) {
+		final boolean[] isBeginning = new boolean[n];
+		final boolean[] isEnd = new boolean[n];
+		isBeginning[0] = true;
+
+		// Mark beginning and end of blocks
+		BranchVisitor bv = new BranchVisitor(isBeginning) {
 			public void visitBranch(int pc0, int pc1) {
-				isend[pc0] = true;
-				isbeg[pc1] = true;
+				isEnd[pc0] = true;
+				isBeginning[pc1] = true;
 			}
 
 			public void visitReturn(int pc) {
-				isend[pc] = true;
+				isEnd[pc] = true;
 			}
 		};
+
 		visitBranches(p, bv); // 1st time to mark branches
 		visitBranches(p, bv); // 2nd time to catch merges
 
-		// create basic blocks
+		// Create the blocks
 		final BasicBlock[] blocks = new BasicBlock[n];
 		for (int i = 0; i < n; i++) {
-			isbeg[i] = true;
-			BasicBlock b = new BasicBlock(p, i);
+			isBeginning[i] = true;
+			BasicBlock b = new BasicBlock(i);
 			blocks[i] = b;
-			while (!isend[i] && i + 1 < n && !isbeg[i + 1]) {
+			while (!isEnd[i] && i + 1 < n && !isBeginning[i + 1]) {
 				blocks[b.pc1 = ++i] = b;
 			}
 		}
 
-		// count previous, next
-		final int[] nnext = new int[n];
-		final int[] nprev = new int[n];
-		visitBranches(p, new BranchVisitor(isbeg) {
+		// Count number of next and previous blocks
+		final int[] nNext = new int[n];
+		final int[] nPrevious = new int[n];
+		visitBranches(p, new BranchVisitor(isBeginning) {
 			public void visitBranch(int pc0, int pc1) {
-				nnext[pc0]++;
-				nprev[pc1]++;
+				nNext[pc0]++;
+				nPrevious[pc1]++;
 			}
 		});
 
-		// allocate and cross-reference
-		visitBranches(p, new BranchVisitor(isbeg) {
+		// Create the blocks and reference previous and next blocks
+		visitBranches(p, new BranchVisitor(isBeginning) {
 			public void visitBranch(int pc0, int pc1) {
-				if (blocks[pc0].next == null) blocks[pc0].next = new BasicBlock[nnext[pc0]];
-				if (blocks[pc1].prev == null) blocks[pc1].prev = new BasicBlock[nprev[pc1]];
-				blocks[pc0].next[--nnext[pc0]] = blocks[pc1];
-				blocks[pc1].prev[--nprev[pc1]] = blocks[pc0];
+				if (blocks[pc0].next == null) blocks[pc0].next = new BasicBlock[nNext[pc0]];
+				if (blocks[pc1].prev == null) blocks[pc1].prev = new BasicBlock[nPrevious[pc1]];
+				blocks[pc0].next[--nNext[pc0]] = blocks[pc1];
+				blocks[pc1].prev[--nPrevious[pc1]] = blocks[pc0];
 			}
 		});
 		return blocks;
 	}
 
-	abstract public static class BranchVisitor {
-		final boolean[] isbeg;
+	/**
+	 * Filter the list of blocks to only live blocks
+	 *
+	 * @param blocks The blocks to filter
+	 * @return The filtered list of reachable blocks
+	 */
+	public static BasicBlock[] findLiveBlocks(BasicBlock[] blocks) {
+		// Add all reachable blocks
+		Queue<BasicBlock> next = new LinkedList<>();
+		next.add(blocks[0]);
 
-		public BranchVisitor(boolean[] isbeg) {
-			this.isbeg = isbeg;
+		// For each item find the next blocks and add them to the queue
+		while (!next.isEmpty()) {
+			BasicBlock b = next.remove();
+			if (!b.isLive) {
+				b.isLive = true;
+				for (int i = 0, n = b.next != null ? b.next.length : 0; i < n; i++) {
+					if (!b.next[i].isLive) {
+						next.add(b.next[i]);
+					}
+				}
+			}
 		}
 
-		public void visitBranch(int frompc, int topc) {
+		// Create list in natural order
+		List<BasicBlock> list = new ArrayList<>();
+		for (int i = 0; i < blocks.length; i = blocks[i].pc1 + 1) {
+			if (blocks[i].isLive) {
+				list.add(blocks[i]);
+			}
 		}
 
-		public void visitReturn(int atpc) {
+		return list.toArray(new BasicBlock[list.size()]);
+	}
+
+	/**
+	 * Helper class to visit branch instructions
+	 */
+	public abstract static class BranchVisitor {
+		/**
+		 * Which PCs are the beginning to a block
+		 */
+		protected final boolean[] isBeginning;
+
+		public BranchVisitor(boolean[] isBeginning) {
+			this.isBeginning = isBeginning;
+		}
+
+		/**
+		 * Visit a branch instruction
+		 *
+		 * @param fromPc The instruction PC we are branching from
+		 * @param toPc   The instruction PC we are branching to
+		 */
+		public void visitBranch(int fromPc, int toPc) {
+		}
+
+		/**
+		 * Visit a return instruction
+		 *
+		 * @param pc The instruction PC we are returning at
+		 */
+		public void visitReturn(int pc) {
 		}
 	}
 
 	public static void visitBranches(Prototype p, BranchVisitor visitor) {
-		int sbx, j, c;
+		int branchOffset, branchTo;
 		int[] code = p.code;
 		int n = code.length;
 		for (int i = 0; i < n; i++) {
@@ -128,63 +211,32 @@ public class BasicBlock {
 					if (Lua.GET_OPCODE(code[i + 1]) != Lua.OP_JMP) {
 						throw new IllegalArgumentException("test not followed by jump at " + i);
 					}
-					sbx = Lua.GETARG_sBx(code[i + 1]);
+					branchOffset = Lua.GETARG_sBx(code[i + 1]);
 					++i;
-					j = i + sbx + 1;
-					visitor.visitBranch(i, j);
+					branchTo = i + branchOffset + 1;
+					visitor.visitBranch(i, branchTo);
 					visitor.visitBranch(i, i + 1);
 					continue;
 				case Lua.OP_FORLOOP:
-					sbx = Lua.GETARG_sBx(ins);
-					j = i + sbx + 1;
-					visitor.visitBranch(i, j);
+					branchOffset = Lua.GETARG_sBx(ins);
+					branchTo = i + branchOffset + 1;
+					visitor.visitBranch(i, branchTo);
 					visitor.visitBranch(i, i + 1);
 					continue;
 				case Lua.OP_JMP:
 				case Lua.OP_FORPREP:
-					sbx = Lua.GETARG_sBx(ins);
-					j = i + sbx + 1;
-					visitor.visitBranch(i, j);
+					branchOffset = Lua.GETARG_sBx(ins);
+					branchTo = i + branchOffset + 1;
+					visitor.visitBranch(i, branchTo);
 					continue;
 				case Lua.OP_TAILCALL:
 				case Lua.OP_RETURN:
 					visitor.visitReturn(i);
 					continue;
 			}
-			if (i + 1 < n && visitor.isbeg[i + 1]) {
+			if (i + 1 < n && visitor.isBeginning[i + 1]) {
 				visitor.visitBranch(i, i + 1);
 			}
 		}
-	}
-
-	public static BasicBlock[] findLiveBlocks(BasicBlock[] blocks) {
-		// add reachable blocks
-		Vector<BasicBlock> next = new Vector<>();
-		next.addElement(blocks[0]);
-		while (!next.isEmpty()) {
-			BasicBlock b = next.elementAt(0);
-			next.removeElementAt(0);
-			if (!b.islive) {
-				b.islive = true;
-				for (int i = 0, n = b.next != null ? b.next.length : 0; i < n; i++) {
-					if (!b.next[i].islive) {
-						next.addElement(b.next[i]);
-					}
-				}
-			}
-		}
-
-		// create list in natural order
-		Vector<BasicBlock> list = new Vector<>();
-		for (int i = 0; i < blocks.length; i = blocks[i].pc1 + 1) {
-			if (blocks[i].islive) {
-				list.addElement(blocks[i]);
-			}
-		}
-
-		// convert to array
-		BasicBlock[] array = new BasicBlock[list.size()];
-		list.copyInto(array);
-		return array;
 	}
 }

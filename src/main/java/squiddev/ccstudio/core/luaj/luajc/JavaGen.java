@@ -76,8 +76,8 @@ public class JavaGen {
 		Prototype p = pi.prototype;
 		int vresultbase = -1;
 
-		for (int bi = 0; bi < pi.blocklist.length; bi++) {
-			BasicBlock b0 = pi.blocklist[bi];
+		for (int bi = 0; bi < pi.blockList.length; bi++) {
+			BasicBlock b0 = pi.blockList[bi];
 
 			boolean setUpvalues = false;
 			for (int pc = b0.pc0; pc <= b0.pc1; pc++) {

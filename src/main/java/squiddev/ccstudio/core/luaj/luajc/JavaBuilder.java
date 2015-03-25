@@ -267,7 +267,7 @@ public class JavaBuilder {
 
 		// Create the fields
 		for (int i = 0; i < p.nups; i++) {
-			boolean isReadWrite = pi.isReadWriteUpvalue(pi.upvals[i]);
+			boolean isReadWrite = pi.isReadWriteUpvalue(pi.upvalues[i]);
 			String type = isReadWrite ? TYPE_LOCALUPVALUE : TYPE_LUAVALUE;
 			writer.visitField(0, upvalueName(i), type, null, null);
 		}
@@ -507,8 +507,8 @@ public class JavaBuilder {
 	}
 
 	public void convertToUpvalue(int pc, int slot) {
-		boolean isUpvalueAssing = pi.isUpvalueAssign(pc, slot);
-		if (isUpvalueAssing) {
+		boolean isUpvalueAssign = pi.isUpvalueAssign(pc, slot);
+		if (isUpvalueAssign) {
 			int index = findSlotIndex(slot, false);
 
 			// Load it from the slot, convert to an array and store it to the upvalue slot
@@ -524,7 +524,7 @@ public class JavaBuilder {
 	}
 
 	public void loadUpvalue(int upvalueIndex) {
-		boolean isReadWrite = pi.isReadWriteUpvalue(pi.upvals[upvalueIndex]);
+		boolean isReadWrite = pi.isReadWriteUpvalue(pi.upvalues[upvalueIndex]);
 		main.visitVarInsn(ALOAD, 0);
 
 		if (isReadWrite) {
@@ -539,7 +539,7 @@ public class JavaBuilder {
 	}
 
 	public void storeUpvalue(int pc, int upvalueIndex, int slot) {
-		boolean isReadWrite = pi.isReadWriteUpvalue(pi.upvals[upvalueIndex]);
+		boolean isReadWrite = pi.isReadWriteUpvalue(pi.upvalues[upvalueIndex]);
 		main.visitVarInsn(ALOAD, 0);
 		if (isReadWrite) {
 			// We set the first value of the array in <classname>.<upvalueName>
@@ -796,7 +796,7 @@ public class JavaBuilder {
 	}
 
 	public void closureInitUpvalueFromUpvalue(String protoName, int newUpvalue, int upvalueIndex) {
-		boolean isReadWrite = pi.isReadWriteUpvalue(pi.upvals[upvalueIndex]);
+		boolean isReadWrite = pi.isReadWriteUpvalue(pi.upvalues[upvalueIndex]);
 
 		String type = isReadWrite ? TYPE_LOCALUPVALUE : TYPE_LUAVALUE;
 		String srcName = upvalueName(upvalueIndex);

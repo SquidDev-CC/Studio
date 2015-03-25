@@ -121,3 +121,4 @@ docs/
 /dist/
 /computer/
 *Dump.java
+*.lasm
