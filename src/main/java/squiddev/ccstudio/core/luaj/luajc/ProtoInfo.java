@@ -57,6 +57,11 @@ public class ProtoInfo {
 	 */
 	public final UpvalueInfo[][] openUpvalues;
 
+	/**
+	 * Storage for all phi variables in the prototype
+	 */
+	private final Set<VarInfo> phis = new HashSet<>();
+
 	public ProtoInfo(Prototype p, String name) {
 		this(p, name, null);
 	}
@@ -80,6 +85,7 @@ public class ProtoInfo {
 
 		// find variables
 		vars = findVariables();
+		replaceTrivialPhiVariables();
 
 		// find upvalues, create sub-prototypes
 		openUpvalues = new UpvalueInfo[p.maxstacksize][];
@@ -158,7 +164,7 @@ public class ProtoInfo {
 		/**
 		 * List of phi variables used
 		 */
-		Set<VarInfo> phis = new HashSet<>();
+		Set<VarInfo> phis = this.phis;
 
 		// Create storage for variables
 		int n = prototype.code.length;
@@ -424,6 +430,15 @@ public class ProtoInfo {
 			}
 		}
 
+
+		return v;
+	}
+
+	/**
+	 * Replace phi variables that reference the same thing
+	 */
+	private void replaceTrivialPhiVariables() {
+		Set<VarInfo> phis = this.phis;
 		// Replace trivial Phi variables
 		for (BasicBlock b0 : blockList) {
 			for (int slot = 0; slot < prototype.maxstacksize; slot++) {
@@ -442,49 +457,53 @@ public class ProtoInfo {
 		for (VarInfo phi : phis) {
 			phi.resolvePhiVariableValues();
 		}
-		return v;
 	}
 
 	/**
-	 * Replace a
+	 * Replace a variable in a specific slot
 	 *
 	 * @param slot   The slot to replace at
 	 * @param oldVar The old variable
 	 * @param newVar The new variable
 	 */
 	private void substituteVariable(int slot, VarInfo oldVar, VarInfo newVar) {
-		for (int instruction : prototype.code) {
-			VarInfo[] vars = this.vars[slot];
-			int length = vars.length;
-			for (int i = 0; i < length; i++) {
-				if (vars[i] == oldVar) {
-					vars[i] = newVar;
-				}
+		VarInfo[] vars = this.vars[slot];
+		int length = vars.length;
+		for (int i = 0; i < length; i++) {
+			if (vars[i] == oldVar) {
+				vars[i] = newVar;
 			}
 		}
 	}
 
+
+	/**
+	 * Find upvalues and create child prototypes
+	 */
 	private void findUpvalues() {
 		int[] code = prototype.code;
 		int n = code.length;
 
-		// propogate to inner prototypes
+		// Propagate to inner prototypes
 		for (int pc = 0; pc < n; pc++) {
 			if (Lua.GET_OPCODE(code[pc]) == Lua.OP_CLOSURE) {
 				int bx = Lua.GETARG_Bx(code[pc]);
-				Prototype newp = prototype.p[bx];
-				UpvalueInfo[] newu = newp.nups > 0 ? new UpvalueInfo[newp.nups] : null;
-				String newname = name + "$" + bx;
-				for (int j = 0; j < newp.nups; ++j) {
+				Prototype childPrototype = prototype.p[bx];
+				String childName = name + "$" + bx;
+
+				UpvalueInfo[] childUpvalues = childPrototype.nups > 0 ? new UpvalueInfo[childPrototype.nups] : null;
+
+				for (int j = 0; j < childPrototype.nups; ++j) {
 					int i = code[++pc];
 					int b = Lua.GETARG_B(i);
-					newu[j] = (i & 4) != 0 ? upvalues[b] : findOpenUp(pc, b);
+					childUpvalues[j] = (i & 4) != 0 ? upvalues[b] : findOpenUp(pc, b);
 				}
-				subprotos[bx] = new ProtoInfo(newp, newname, newu);
+
+				subprotos[bx] = new ProtoInfo(childPrototype, childName, childUpvalues);
 			}
 		}
 
-		// mark all upvalues that are written locally as read/write
+		// Mark all upvalues that are written locally as read/write
 		for (int instruction : code) {
 			if (Lua.GET_OPCODE(instruction) == Lua.OP_SETUPVAL) {
 				upvalues[Lua.GETARG_B(instruction)].readWrite = true;

@@ -1,13 +1,3 @@
-package squiddev.ccstudio.core.luaj.luajc;
-
-import org.luaj.vm2.LuaFunction;
-import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.Prototype;
-import squiddev.ccstudio.core.Config;
-
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * ****************************************************************************
  * Copyright (c) 2010 Luaj.org. All rights reserved.
@@ -31,6 +21,16 @@ import java.util.Map;
  * THE SOFTWARE.
  * ****************************************************************************
  */
+package squiddev.ccstudio.core.luaj.luajc;
+
+import org.luaj.vm2.LuaFunction;
+import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.Prototype;
+import squiddev.ccstudio.core.Config;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class JavaLoader extends ClassLoader {
 
 	private final LuaValue env;
