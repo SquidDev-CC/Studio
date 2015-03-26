@@ -133,7 +133,7 @@ public class DumpInstructions {
 			int line = chunk.lineinfo[pc];
 			if (line != previousLine) {
 				if (pc != 0) write();
-				write("; Line: " + line);
+				write("; Line: " + line + ", PC: " + pc);
 				previousLine = line;
 			}
 

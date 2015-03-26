@@ -57,14 +57,8 @@ uploadArchives {
 
 sourceSets {
 	main {
-		resources {
+		java {
 			exclude '**/__ignore/*'
 		}
-	}
-}
-
-test {
-	filter {
-		includeTestsMatching "squidev.*"
 	}
 }

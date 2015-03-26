@@ -40,6 +40,7 @@ public class CompilerTest {
 			{"TailCall"},
 			{"StringDump"},
 			{"EdgeCases"},
+			{"BranchUpvalue2"},
 
 			{"fragment/ForLoopParamUpvalues"},
 			{"fragment/VarVarargsUseArg"},
@@ -85,7 +86,6 @@ public class CompilerTest {
 			{"fragment/LoopVarUpvalues"},
 			{"fragment/PhiVarUpvalue"},
 			{"fragment/UpvaluesInElseClauses"},
-
 
 		});
 	}
