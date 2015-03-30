@@ -91,6 +91,14 @@ public class APIBuilderTest {
 		assertEquals(result.arg(4).toString(), "World");
 	}
 
+	/**
+	 * Test that ignoring varargs works
+	 */
+	@Test
+	public void testNoVarargs() {
+		table.get("subArgs").invoke(LuaValue.valueOf(2), LuaValue.valueOf(3));
+	}
+
 	@Test
 	public void testReturnVarargs() {
 		Varargs result = table.get("returnVarargs").invoke();

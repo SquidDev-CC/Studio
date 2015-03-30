@@ -21,6 +21,8 @@ public class LuaMethod implements Iterable<LuaMethod.LuaArgument> {
 	public final LuaFunction function;
 	public final Method method;
 
+	public final boolean varargs;
+
 	protected final LuaArgument[] arguments;
 
 	public LuaMethod(Method m) {
@@ -29,16 +31,23 @@ public class LuaMethod implements Iterable<LuaMethod.LuaArgument> {
 		type = m.getDeclaringClass();
 
 
+		boolean varargs = false;
 		Parameter[] params = m.getParameters();
 		LuaArgument[] arguments = this.arguments = new LuaArgument[params.length];
 		for (int i = 0; i < params.length; i++) {
 			Parameter param = params[i];
-			if (i + 1 < params.length && param.getType().equals(Varargs.class)) {
-				throw new APIBuilder.BuilderException("Varargs must be last item", m);
+			if(param.getType().equals(Varargs.class)) {
+				varargs = true;
+				if (i + 1 < params.length) {
+					throw new APIBuilder.BuilderException("Varargs must be last item", m);
+				}
 			}
+
 
 			arguments[i] = new LuaArgument(param);
 		}
+
+		this.varargs = varargs;
 	}
 
 	/**
@@ -167,7 +176,7 @@ public class LuaMethod implements Iterable<LuaMethod.LuaArgument> {
 		}
 
 		public int length() {
-			return items.length;
+			return items.length - (varargs ? 1 : 0);
 		}
 
 		public void rewind() {
