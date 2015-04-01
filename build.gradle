@@ -1,12 +1,18 @@
 apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'idea'
+apply plugin: 'maven'
 
 sourceCompatibility = 1.8
+
+group = 'org.squiddev'
 version = '0.1'
 
 repositories {
 	mavenCentral()
+
+	maven {
+		name = "squiddev"
+		url = "http://maven.bonzodandd.co.uk"
+	}
 
 	ivy {
 		name "ComputerCraft"
@@ -16,19 +22,20 @@ repositories {
 
 dependencies {
 	// Core Libraries
-	compile group: 'org.ow2.asm', name: 'asm-all', version: '5.+'
 	compile group: 'ComputerCraft', name: 'ComputerCraft', version: '1.73', ext: 'jar'
+	compile group: 'org.squiddev', name: 'luaj.api', version: '1.+'
+	compile group: 'org.squiddev', name: 'luaj.luajc', version: '1.+'
 
 	// TerminalOutput dependencies
 	compile group: 'jline', name: 'jline', version: '2.+'
 
 	// LWJGL dependencies
 	// http://build.lwjgl.org/stable/lwjgl.zip
-	// compile group: 'org.lwjgl.lwjgl', name: 'lwjgl', version: '2.9.3'
 	compile files('lib/jar/lwjgl.jar')
 
 	testCompile group: 'junit', name: 'junit', version: '4.+'
 }
+configurations.all { exclude group: 'org.luaj' }
 
 // Download LWJGL from online
 task getLwjgl(type: Copy) {
@@ -46,25 +53,3 @@ task getLwjgl(type: Copy) {
 }
 
 compileJava.dependsOn getLwjgl
-
-uploadArchives {
-	repositories {
-		flatDir {
-			dirs 'build'
-		}
-	}
-}
-
-sourceSets {
-	main {
-		resources {
-			exclude '**/__ignore/*'
-		}
-	}
-}
-
-test {
-	filter {
-		includeTestsMatching "squidev.*"
-	}
-}
