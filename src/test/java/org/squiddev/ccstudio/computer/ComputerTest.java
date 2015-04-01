@@ -14,14 +14,17 @@ public class ComputerTest {
 		Computer comp = new Computer(new Config(), new TerminalOutput());
 
 		comp.start();
-		Object obj = new Object();
+		final Object obj = new Object();
 
 		comp.queueEvent("paste", LuaValue.valueOf("ls"));
 		comp.queueEvent("key", LuaValue.valueOf(28));
 
-		comp.events.add(() -> {
-			synchronized (obj) {
-				obj.notify();
+		comp.events.add(new Runnable() {
+			@Override
+			public void run() {
+				synchronized (obj) {
+					obj.notify();
+				}
 			}
 		});
 

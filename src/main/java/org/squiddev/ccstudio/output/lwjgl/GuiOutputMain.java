@@ -86,8 +86,8 @@ public class GuiOutputMain {
 		if (window == NULL) throw new RuntimeException("Failed to create the GLFW window");
 
 		// Setup a key callback. It will be called every time a key is pressed, repeated or released.
-		Keys k = new Keys();
-		Actions actions = new Actions();
+		final Keys k = new Keys();
+		final Actions actions = new Actions();
 		actions.add(new Actions.Action(GLFW_KEY_T, GLFW_MOD_CONTROL) {
 			@Override
 			public void execute(Computer computer) {

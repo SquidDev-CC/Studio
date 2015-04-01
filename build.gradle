@@ -1,7 +1,6 @@
 apply plugin: 'java'
-apply plugin: 'maven'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 1.7
 
 group = 'org.squiddev'
 version = '0.1'
@@ -35,20 +34,35 @@ dependencies {
 
 	testCompile group: 'junit', name: 'junit', version: '4.+'
 }
+
+// We provide a custom LuaJ source with ComputerCraft
 configurations.all { exclude group: 'org.luaj' }
+
+// Package all the org.squiddev dependencies into one file
+jar {
+	from configurations.compile
+			.findAll { it.getAbsolutePath().contains("org.squiddev") }
+			.collect { it.isDirectory() ? it : zipTree(it) }
+}
 
 // Download LWJGL from online
 task getLwjgl(type: Copy) {
 	def f = file('lib/jar/lwjgl.jar')
+	// If we don't have the lwjgl file then:
 	if (!f.exists()) {
+		// Create the directory
 		file("lib").mkdirs();
 		def output = file("lib/lwjgl.zip")
 
+		// Download it
 		new URL('http://build.lwjgl.org/stable/lwjgl.zip').withInputStream {
 			i -> output.withOutputStream { it << i }
 		}
+
+		// Extract the jar and native folders. We need native to run the code with
 		from zipTree(output)
 		into "lib"
+		include("jar/**", "native/**")
 	}
 }
 

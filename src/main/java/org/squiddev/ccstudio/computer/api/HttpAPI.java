@@ -71,8 +71,8 @@ public class HttpAPI {
 		protected int responseCode;
 		protected BufferedReader result;
 
-		public HttpRequest(String urlString, String postData, LuaTable headers) {
-			URL url = getURL(urlString);
+		public HttpRequest(final String urlString, final String postData, final LuaTable headers) {
+			final URL url = getURL(urlString);
 
 			new Thread(new Runnable() {
 				@Override

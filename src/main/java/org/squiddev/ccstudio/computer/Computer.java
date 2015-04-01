@@ -285,7 +285,7 @@ public class Computer {
 	 *
 	 * @param force Force a shutdown by terminating the thread
 	 */
-	public void shutdown(boolean force) {
+	public void shutdown(final boolean force) {
 		synchronized (events) {
 			if (mainThread.getState() == ComputerThread.State.STOPPED) {
 				throw new IllegalStateException("Computer is not running");
