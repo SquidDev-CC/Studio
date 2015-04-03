@@ -15,12 +15,12 @@ public class BufferedOutput implements IOutput {
 	protected byte[][] foreground;
 	protected byte[][] text;
 
-	protected int cursorX = 0;
-	protected int cursorY = 0;
+	public int cursorX = 0;
+	public int cursorY = 0;
 
-	protected byte currentBackground = BLACK;
-	protected byte currentForeground = WHITE;
-	boolean cursorBlink = false;
+	public byte currentBackground = BLACK;
+	public byte currentForeground = WHITE;
+	public boolean cursorBlink = false;
 
 	protected int width = -1;
 	protected int height = -1;

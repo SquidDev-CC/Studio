@@ -30,11 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Handles computer
  */
 public class Computer {
-	public static final APIClassLoader loader = new APIClassLoader() {
-		{
-			this.parentClass = CCAPI.class;
-		}
-	};
+	public static final APIClassLoader<CCAPI> loader = APIClassLoader.createLoader(CCAPI.class);
 
 	public static final String[] SIDE_NAMES = {"bottom", "top", "back", "front", "right", "left"};
 	public static final LuaValue[] SIDE_VALUES;
@@ -142,7 +138,7 @@ public class Computer {
 			throw new IllegalArgumentException("Object must have API annotation");
 		}
 
-		addAPI((CCAPI) loader.makeInstance(objectInstance));
+		addAPI(loader.makeInstance(objectInstance));
 	}
 
 	/**
@@ -481,7 +477,7 @@ public class Computer {
 	}
 
 	public CCAPI createLuaObject(Object object) {
-		CCAPI api = (CCAPI) loader.makeInstance(object);
+		CCAPI api = loader.makeInstance(object);
 		api.setup(this, globals);
 		return api;
 	}

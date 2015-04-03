@@ -98,14 +98,27 @@ public class GuiOutputMain {
 		actions.add(new Actions.Action(GLFW_KEY_S, GLFW_MOD_CONTROL) {
 			@Override
 			public void execute(Computer computer) {
-				if (!computer.isAlive()) computer.shutdown();
+				if (computer.isAlive()) computer.shutdown();
 			}
 		});
 
 		actions.add(new Actions.Action(GLFW_KEY_S, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT) {
 			@Override
 			public void execute(Computer computer) {
-				if (!computer.isAlive()) computer.shutdown(true);
+				if (computer.isAlive()) computer.shutdown(true);
+			}
+		});
+
+		actions.add(new Actions.Action(GLFW_KEY_V, GLFW_MOD_CONTROL, 0) {
+			@Override
+			public void execute(Computer computer) {
+				String clipboard = glfwGetClipboardString(window);
+				if (computer.isAlive() && clipboard != null) {
+					computer.queueEvent("paste", LuaValue.valueOf(
+						// Trim to first \r or \n and take max of 127 characters
+						clipboard.replaceAll("^([^\r\n]{0,127})[\\s\\S]*", "$1")
+					));
+				}
 			}
 		});
 
@@ -208,6 +221,9 @@ public class GuiOutputMain {
 		computer = new Computer(new Config(), output);
 		computer.start();
 
+		int counter = 0;
+		final int blinkTime = 20;
+
 		// Run the rendering loop until the user has attempted to close
 		// the window or has pressed the ESCAPE key.
 		while (glfwWindowShouldClose(window) == GL_FALSE) {
@@ -240,6 +256,27 @@ public class GuiOutputMain {
 			}
 
 			output.redraw();
+
+			if (output.cursorBlink && counter > blinkTime) {
+				glPushMatrix();
+
+				glTranslatef(output.cursorX * GuiOutput.CELL_WIDTH, output.cursorY * GuiOutput.CELL_HEIGHT, 0);
+
+				glBegin(GL_QUADS);
+				{
+					glVertex2f(0, 0);
+					glVertex2f(0, GuiOutput.CELL_HEIGHT);
+					glVertex2f(GuiOutput.CELL_WIDTH, GuiOutput.CELL_HEIGHT);
+					glVertex2f(GuiOutput.CELL_WIDTH, 0);
+				}
+				glEnd();
+
+				output.font.drawCharacter((byte) '_', output.currentForeground);
+
+				glPopMatrix();
+			}
+
+			counter = (counter + 1) % (blinkTime * 2);
 
 			glfwSwapBuffers(window); // swap the color buffers*/
 

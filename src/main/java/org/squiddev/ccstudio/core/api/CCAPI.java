@@ -1,6 +1,9 @@
 package org.squiddev.ccstudio.core.api;
 
-import org.luaj.vm2.*;
+import org.luaj.vm2.LuaFunction;
+import org.luaj.vm2.LuaTable;
+import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.VarArgFunction;
 import org.squiddev.ccstudio.computer.Computer;
 import org.squiddev.luaj.api.LuaObjectWrapper;
@@ -18,26 +21,17 @@ public abstract class CCAPI extends LuaObjectWrapper {
 	}
 
 	/**
-	 * Convert this to a Lua table
+	 * Create a function with the specified index.
+	 * Override to use custom functions
 	 *
-	 * @return The API object
+	 * @param index The function's index
+	 * @return The created function
 	 */
-	protected LuaTable createTable() {
-		LuaTable table = new LuaTable();
-		try {
-			for (int i = 0, n = methodNames.length; i < n; i++) {
-				// Allow multiple names
-				for (String name : methodNames[i]) {
-					// Each function should be a different object, even if it is identical.
-					LuaFunction f = new InvokeFunction(i);
-					f.setfenv(env);
-					table.set(name, f);
-				}
-			}
-		} catch (Exception e) {
-			throw new LuaError("Bind failed: " + e);
-		}
-		return table;
+	@Override
+	protected LuaValue createFunction(int index) {
+		LuaFunction f = new InvokeFunction(index);
+		f.setfenv(env);
+		return f;
 	}
 
 	public LuaTable getTable() {

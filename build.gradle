@@ -1,4 +1,5 @@
 apply plugin: 'java'
+apply plugin: 'application'
 
 sourceCompatibility = 1.7
 
@@ -67,3 +68,16 @@ task getLwjgl(type: Copy) {
 }
 
 compileJava.dependsOn getLwjgl
+
+task runGui(type: JavaExec) {
+	main "org.squiddev.ccstudio.output.lwjgl.GuiOutputMain"
+	classpath += sourceSets.main.runtimeClasspath
+	jvmArgs = ["-Dsquiddev.natives=lib/native"]
+}
+runGui.dependsOn classes
+
+task runTerminal(type: JavaExec) {
+	main "org.squiddev.ccstudio.output.terminal.TerminalOutputMain"
+	classpath += sourceSets.main.runtimeClasspath
+}
+runTerminal.dependsOn classes
