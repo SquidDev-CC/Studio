@@ -1,83 +1,64 @@
+group 'org.squiddev'
+version '1.0-SNAPSHOT'
+
 apply plugin: 'java'
-apply plugin: 'application'
 
-sourceCompatibility = 1.7
-
-group = 'org.squiddev'
-version = '0.1'
+sourceCompatibility = 1.6
 
 repositories {
 	mavenCentral()
 
-	maven {
-		name = "squiddev"
-		url = "http://maven.bonzodandd.co.uk"
+	ivy {
+		name = "ComputerCraft"
+		artifactPattern "http://addons-origin.cursecdn.com/files/2275/878/[module][revision](.[ext])"
 	}
 
-	ivy {
-		name "ComputerCraft"
-		artifactPattern "http://addons-origin.cursecdn.com/files/2228/723/[module][revision].[ext]"
+	maven {
+		name = "squiddev"
+		url = "https://dl.bintray.com/squiddev/maven"
 	}
+}
+
+configurations {
+	shade
+	compile.extendsFrom shade
 }
 
 dependencies {
-	// Core Libraries
-	compile group: 'ComputerCraft', name: 'ComputerCraft', version: '1.73', ext: 'jar'
-	compile group: 'org.squiddev', name: 'luaj.api', version: '1.+'
-	compile group: 'org.squiddev', name: 'luaj.luajc', version: '1.+'
+	compile "ComputerCraft:ComputerCraft:1.78"
+	compile "com.googlecode.lanterna:lanterna:3.0.0-beta2"
+	compile 'com.google.guava:guava:19.0'
+	compile "com.google.code.gson:gson:2.6.2"
+	compile "org.ow2.asm:asm-debug-all:5.0.4"
 
-	// TerminalOutput dependencies
-	compile group: 'jline', name: 'jline', version: '2.+'
-
-	// LWJGL dependencies
-	// http://build.lwjgl.org/stable/lwjgl.zip
-	compile files('lib/jar/lwjgl.jar')
-
-	testCompile group: 'junit', name: 'junit', version: '4.+'
-}
-
-// We provide a custom LuaJ source with ComputerCraft
-configurations.all { exclude group: 'org.luaj' }
-
-// Package all the org.squiddev dependencies into one file
-jar {
-	from configurations.compile
-			.findAll { it.getAbsolutePath().contains("org.squiddev") }
-			.collect { it.isDirectory() ? it : zipTree(it) }
-}
-
-// Download LWJGL from online
-task getLwjgl(type: Copy) {
-	def f = file('lib/jar/lwjgl.jar')
-	// If we don't have the lwjgl file then:
-	if (!f.exists()) {
-		// Create the directory
-		file("lib").mkdirs();
-		def output = file("lib/lwjgl.zip")
-
-		// Download it
-		new URL('http://build.lwjgl.org/stable/lwjgl.zip').withInputStream {
-			i -> output.withOutputStream { it << i }
-		}
-
-		// Extract the jar and native folders. We need native to run the code with
-		from zipTree(output)
-		into "lib"
-		include("jar/**", "native/**")
+	shade('org.squiddev:luaj.luajc:1.0.5') {
+		// We provide a custom LuaJ source with ComputerCraft
+		exclude group: 'org.luaj'
 	}
+
+	shade 'org.squiddev:Patcher:1.1.1.1'
+
+	testCompile group: 'junit', name: 'junit', version: '4.11'
 }
 
-compileJava.dependsOn getLwjgl
+jar {
+	manifest {
+		attributes("Premain-Class": "org.squiddev.studio.modifications.Loader")
+	}
 
-task runGui(type: JavaExec) {
-	main "org.squiddev.ccstudio.output.lwjgl.GuiOutputMain"
-	classpath += sourceSets.main.runtimeClasspath
-	jvmArgs = ["-Dsquiddev.natives=lib/native"]
+	from configurations.shade
+		.findAll { it.getAbsolutePath().contains("org.squiddev") }
+		.collect { it.isDirectory() ? it : zipTree(it) }
+
+	// Package the patch files into a patch/ folder
+	filesMatching("org/luaj/**", {
+		it.path = "patch/" + it.path
+	})
 }
-runGui.dependsOn classes
 
 task runTerminal(type: JavaExec) {
-	main "org.squiddev.ccstudio.output.terminal.TerminalOutputMain"
+	main "org.squiddev.studio.interact.laterna.Runner"
 	classpath += sourceSets.main.runtimeClasspath
+	jvmArgs = ['-javaagent:' + jar.archivePath]
 }
-runTerminal.dependsOn classes
+runTerminal.dependsOn jar
