@@ -25,7 +25,7 @@ import dan200.computercraft.api.lua.ILuaContext;
 import dan200.computercraft.api.lua.LuaException;
 import org.squiddev.patcher.Logger;
 import org.squiddev.studio.api.lua.ILuaAPI;
-import org.squiddev.studio.modifications.Config;
+import org.squiddev.studio.Config;
 
 import java.io.IOException;
 import java.net.URI;

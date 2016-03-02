@@ -57,8 +57,7 @@ jar {
 }
 
 task runTerminal(type: JavaExec) {
-	main "org.squiddev.studio.interact.laterna.Runner"
+	main "org.squiddev.studio.launch.Launch"
 	classpath += sourceSets.main.runtimeClasspath
-	jvmArgs = ['-javaagent:' + jar.archivePath]
 }
 runTerminal.dependsOn jar

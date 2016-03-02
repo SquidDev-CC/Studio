@@ -35,7 +35,7 @@ public class InjectLuaJC implements IPatcher {
 				nodes.accept(visitor);
 
 				Label continueLabel = new Label();
-				visitor.visitFieldInsn(GETSTATIC, "org/squiddev/studio/modifications/Config$Computer", "luaJC", "Z");
+				visitor.visitFieldInsn(GETSTATIC, "org/squiddev/studio/Config$Computer", "luaJC", "Z");
 				visitor.visitJumpInsn(IFEQ, continueLabel);
 				visitor.visitMethodInsn(INVOKESTATIC, "org/squiddev/studio/modifications/lua/FallbackLuaJC", "install", "()V", false);
 				visitor.visitLabel(continueLabel);

@@ -1,12 +1,12 @@
 package org.squiddev.studio.modifications.lua;
 
 import dan200.computercraft.api.peripheral.IComputerAccess;
+import org.squiddev.studio.Config;
 import org.squiddev.studio.api.Module;
 import org.squiddev.studio.api.Transformer;
 import org.squiddev.studio.api.lua.ILuaAPI;
 import org.squiddev.studio.api.lua.ILuaAPIFactory;
 import org.squiddev.studio.api.lua.ILuaEnvironment;
-import org.squiddev.studio.modifications.Config;
 import org.squiddev.studio.modifications.lua.socket.SocketAPI;
 
 public class ApiModule implements Module {

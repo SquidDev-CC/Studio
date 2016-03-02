@@ -5,8 +5,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.squiddev.patcher.transformer.ClassMerger;
-import org.squiddev.patcher.transformer.TransformationChain;
 import org.squiddev.patcher.visitors.FindingVisitor;
+import org.squiddev.studio.api.Transformer;
 
 import java.util.Arrays;
 
@@ -85,9 +85,8 @@ public final class BinaryUtils {
 	 * Inject all binary patches into the chain
 	 *
 	 * @param chain The chain to inject
-	 * @return The chain that has been injected
 	 */
-	public static TransformationChain inject(TransformationChain chain) {
+	public static void inject(Transformer chain) {
 		chain.add(new BinaryGeneric());
 		chain.add(new BinaryMachine());
 		chain.add(new BinaryFS());
@@ -100,7 +99,5 @@ public final class BinaryUtils {
 		chain.add(new ClassMerger(BinaryFS.READER_OBJECT, BinaryFS.READER_OBJECT));
 		chain.add(new ClassMerger(BinaryFS.WRITER_OBJECT, BinaryFS.WRITER_OBJECT));
 		chain.add(new ClassMerger("dan200.computercraft.core.filesystem.FileSystem", "org.squiddev.studio.modifications.patch.binfs.FileSystem_Patch"));
-
-		return chain;
 	}
 }

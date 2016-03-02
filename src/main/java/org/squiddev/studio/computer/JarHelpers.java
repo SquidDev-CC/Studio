@@ -5,9 +5,9 @@ import dan200.computercraft.core.filesystem.JarMount;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.CodeSource;
 
 /**
  * Various helpers for getting files from a Jar file
@@ -26,18 +26,26 @@ public final class JarHelpers {
 	}
 
 	public static File getJarFromClass(Class<?> clazz) {
-		CodeSource codeSource = clazz.getProtectionDomain().getCodeSource();
-		if (codeSource == null) {
-			throw new IllegalArgumentException("Failed to get CodeSource for " + clazz);
+		String path = clazz.getProtectionDomain().getCodeSource().getLocation().getPath();
+		int bangIndex = path.indexOf("!");
+		if (bangIndex >= 0) {
+			path = path.substring(0, bangIndex);
 		}
 
-		URL location = codeSource.getLocation();
+		URL url;
+		try {
+			url = new URL(path);
+		} catch (MalformedURLException e) {
+			return null;
+		}
+
 		File file;
 		try {
-			file = new File(location.toURI());
+			file = new File(url.toURI());
 		} catch (URISyntaxException e) {
-			file = new File(location.getPath());
+			file = new File(url.getPath());
 		}
+
 		return file;
 	}
 }

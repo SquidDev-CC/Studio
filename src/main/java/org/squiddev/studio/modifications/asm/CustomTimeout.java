@@ -31,7 +31,7 @@ public class CustomTimeout implements IPatcher {
 			@Override
 			public void handle(InsnList nodes, MethodVisitor visitor) {
 				visitor.visitVarInsn(ALOAD, 4);
-				visitor.visitFieldInsn(GETSTATIC, "org/squiddev/studio/modifications/Config$Computer", "computerThreadTimeout", "I");
+				visitor.visitFieldInsn(GETSTATIC, "org/squiddev/studio/Config$Computer", "computerThreadTimeout", "I");
 				visitor.visitInsn(I2L);
 				visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "join", "(J)V", false);
 			}

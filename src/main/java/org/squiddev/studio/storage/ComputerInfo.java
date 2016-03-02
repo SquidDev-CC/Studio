@@ -15,7 +15,7 @@ public class ComputerInfo {
 	/**
 	 * The space limit of the computer
 	 */
-	public long spaceLimit;
+	public long spaceLimit = DEFAULT_SPACE_LIMIT;
 
 	/**
 	 * The ID for the computer
@@ -44,6 +44,8 @@ public class ComputerInfo {
 
 	public ComputerInfo() {
 		sides = new Side[6];
-		for (int i = 0; i < 6; i++) sides[i] = new Side();
+		for (int i = 0; i < 6; i++) {
+			sides[i] = new Side();
+		}
 	}
 }

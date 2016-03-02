@@ -1,4 +1,4 @@
-package org.squiddev.studio.modifications;
+package org.squiddev.studio;
 
 import org.squiddev.studio.modifications.lua.socket.AddressMatcher;
 
@@ -16,7 +16,6 @@ public final class Config {
 	public static AddressMatcher socketBlacklist;
 
 	public static void onSync() {
-
 		globalWhitelist = new HashSet<String>(Arrays.asList(Computer.globalWhitelist));
 
 		socketWhitelist = new AddressMatcher(APIs.Socket.whitelist);

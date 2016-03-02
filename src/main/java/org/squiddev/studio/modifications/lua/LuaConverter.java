@@ -4,8 +4,6 @@ import org.luaj.vm2.LuaString;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 
-import java.nio.charset.Charset;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -27,13 +25,13 @@ public class LuaConverter {
 			case LuaValue.TBOOLEAN:
 				return value.toboolean();
 			case LuaValue.TSTRING: {
+				LuaString string = (LuaString) value;
 				if (binary) {
-					LuaString string = (LuaString) value;
 					byte[] result = new byte[string.m_length];
 					System.arraycopy(string.m_bytes, string.m_offset, result, 0, string.m_length);
 					return result;
 				} else {
-					return value.toString();
+					return decodeString(string.m_bytes, string.m_offset, string.m_length);
 				}
 			}
 			case LuaValue.TTABLE: {
@@ -120,34 +118,27 @@ public class LuaConverter {
 		}
 	}
 
-	private static Charset CHARSET;
+	public static String decodeString(byte[] bytes) {
+		return decodeString(bytes, 0, bytes.length);
+	}
 
-	public static Charset getCharset() {
-		if (CHARSET == null) {
-			try {
-				CHARSET = Charset.forName("UTF8");
-			} catch (UnsupportedCharsetException e) {
-				try {
-					// Fall back. Shouldn't happen, but you never know
-					CHARSET = Charset.forName("ISO-8859-1");
-				} catch (UnsupportedCharsetException e1) {
-					CHARSET = Charset.defaultCharset();
-				}
-			}
+	public static String decodeString(byte[] bytes, int start, int length) {
+		char[] chars = new char[length];
+
+		for (int i = 0; i < chars.length; ++i) {
+			chars[i] = (char) (bytes[start + i] & 255);
 		}
 
-		return CHARSET;
-	}
-
-	public static String decodeString(byte[] bytes) {
-		return new String(bytes, getCharset());
-	}
-
-	public static String decodeString(byte[] bytes, int offset, int length) {
-		return new String(bytes, offset, length, getCharset());
+		return new String(chars);
 	}
 
 	public static byte[] toBytes(String string) {
-		return string.getBytes(getCharset());
+		byte[] chars = new byte[string.length()];
+
+		for (int i = 0; i < chars.length; ++i) {
+			// chars[i] = (char) (bytes[start + i] & 255);
+		}
+
+		return chars;
 	}
 }

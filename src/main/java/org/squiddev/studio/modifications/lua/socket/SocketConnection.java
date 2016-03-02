@@ -23,12 +23,11 @@ package org.squiddev.studio.modifications.lua.socket;
 
 import dan200.computercraft.api.lua.ILuaContext;
 import dan200.computercraft.api.lua.LuaException;
+import org.squiddev.studio.Config;
 import org.squiddev.studio.api.lua.IArguments;
 import org.squiddev.studio.api.lua.ILuaObjectWithArguments;
-import org.squiddev.studio.modifications.Config;
 import org.squiddev.studio.modifications.lua.LuaConverter;
 import org.squiddev.studio.modifications.lua.LuaHelpers;
-import org.squiddev.studio.modifications.utils.Helpers;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -43,7 +42,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class SocketConnection implements ILuaObjectWithArguments {
-	private static final ScheduledExecutorService threads = Helpers.createThread("Socket", Config.APIs.Socket.threads);
+	private static final ScheduledExecutorService threads = ThreadFactory.createThread("Socket", Config.APIs.Socket.threads);
 
 	private final SocketAPI owner;
 

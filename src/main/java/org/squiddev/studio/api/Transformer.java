@@ -4,7 +4,7 @@ import org.squiddev.patcher.transformer.IPatcher;
 import org.squiddev.patcher.transformer.ISource;
 
 /**
- * org.squiddev.studio.api (studio
+ * A basic transformer implementation
  */
 public interface Transformer {
 	/**
@@ -17,4 +17,8 @@ public interface Transformer {
 	void add(IPatcher patcher);
 
 	void add(ISource source);
+
+	void addExclusion(String exclusion);
+
+	void finalise();
 }

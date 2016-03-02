@@ -3,7 +3,6 @@ package org.squiddev.studio.modifications.lua;
 import dan200.computercraft.api.filesystem.IMount;
 import dan200.computercraft.api.filesystem.IWritableMount;
 import dan200.computercraft.api.lua.ILuaContext;
-import dan200.computercraft.api.lua.ILuaTask;
 import dan200.computercraft.api.lua.LuaException;
 import dan200.computercraft.api.peripheral.IComputerAccess;
 import dan200.computercraft.core.apis.IAPIEnvironment;
@@ -19,12 +18,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class LuaEnvironment implements ILuaEnvironment {
-	private final ILuaTask sleepTask = new ILuaTask() {
-		@Override
-		public Object[] execute() throws LuaException {
-			return null;
-		}
-	};
 	/**
 	 * The instance of the Lua environment - this exists as ASM is easier this way
 	 */
@@ -104,13 +97,11 @@ public class LuaEnvironment implements ILuaEnvironment {
 	}
 
 	private static final class ComputerAccess implements IComputerAccess {
-		private final Computer computer;
 		private final IAPIEnvironment environment;
 		private final Set<String> mounts = new HashSet<String>();
 		private FileSystem fs;
 
 		private ComputerAccess(Computer computer) {
-			this.computer = computer;
 			this.environment = computer.getAPIEnvironment();
 		}
 

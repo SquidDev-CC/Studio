@@ -5,7 +5,7 @@ import org.squiddev.luaj.luajc.ErrorHandler;
 import org.squiddev.luaj.luajc.LuaJC;
 import org.squiddev.luaj.luajc.analysis.ProtoInfo;
 import org.squiddev.patcher.Logger;
-import org.squiddev.studio.modifications.Config;
+import org.squiddev.studio.Config;
 
 /**
  * A version of LuaJC that falls back to normal Lua interpretation

@@ -33,7 +33,7 @@ public class WhitelistGlobals implements IPatcher {
 				if (constant instanceof String) {
 					Label blacklistLabel = new Label();
 
-					visitor.visitFieldInsn(GETSTATIC, "org/squiddev/studio/modifications/Config", "globalWhitelist", "Ljava/util/Set;");
+					visitor.visitFieldInsn(GETSTATIC, "org/squiddev/studio/Config", "globalWhitelist", "Ljava/util/Set;");
 					visitor.visitLdcInsn(constant);
 					visitor.visitMethodInsn(INVOKEINTERFACE, "java/util/Set", "contains", "(Ljava/lang/Object;)Z", true);
 					visitor.visitJumpInsn(IFNE, blacklistLabel);

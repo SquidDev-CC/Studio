@@ -3,11 +3,11 @@ package org.squiddev.studio.modifications.lua;
 import dan200.computercraft.api.lua.ILuaContext;
 import dan200.computercraft.api.lua.LuaException;
 import dan200.computercraft.api.peripheral.IComputerAccess;
+import org.squiddev.studio.Config;
 import org.squiddev.studio.api.lua.IArguments;
 import org.squiddev.studio.api.lua.ILuaAPI;
 import org.squiddev.studio.api.lua.ILuaAPIFactory;
 import org.squiddev.studio.api.lua.ILuaObjectWithArguments;
-import org.squiddev.studio.modifications.Config;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
