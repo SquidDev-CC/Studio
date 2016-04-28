@@ -1,5 +1,8 @@
 package org.squiddev.studio.interact.laterna;
 
+import java.io.PrintWriter;
+import java.io.IOException;
+
 import dan200.computercraft.core.computer.ComputerThread;
 import org.squiddev.studio.computer.ComputerManager;
 import org.squiddev.studio.storage.ComputerInfo;

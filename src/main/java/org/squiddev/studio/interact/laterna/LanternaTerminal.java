@@ -44,13 +44,19 @@ public class LanternaTerminal {
 
 		terminal = new DefaultTerminalFactory()
 			.setInitialTerminalSize(new TerminalSize(manager.terminal.getWidth(), manager.terminal.getHeight()))
-			.setMouseCaptureMode(MouseCaptureMode.CLICK_RELEASE_DRAG)
+			// .setMouseCaptureMode(MouseCaptureMode.CLICK_RELEASE_DRAG)
 			.setTerminalEmulatorDeviceConfiguration(new TerminalEmulatorDeviceConfiguration(2000, 500, TerminalEmulatorDeviceConfiguration.CursorStyle.UNDER_BAR, new TextColor.RGB(255, 255, 255), true))
 			.setTerminalEmulatorTitle(getLabel())
 			.createTerminal();
 
 		sizeChanged = false;
-		size = terminal.getTerminalSize();
+
+		try {
+			size = terminal.getTerminalSize();
+		} catch (IOException e) {
+			size = new TerminalSize(51, 19);
+		}
+
 		manager.terminal.resize(size.getColumns(), size.getRows());
 
 		terminal.addResizeListener(new ResizeListener() {

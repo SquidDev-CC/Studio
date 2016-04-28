@@ -4,10 +4,12 @@ import dan200.computercraft.api.filesystem.IMount;
 import dan200.computercraft.api.filesystem.IWritableMount;
 import dan200.computercraft.core.computer.IComputerEnvironment;
 import dan200.computercraft.core.filesystem.FileMount;
+import dan200.computercraft.core.filesystem.JarMount;
 import org.squiddev.studio.storage.ComputerInfo;
 import org.squiddev.studio.storage.Session;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Information about the computer
@@ -58,6 +60,12 @@ public class ComputerEnvironment implements IComputerEnvironment {
 
 	@Override
 	public IMount createResourceMount(String domain, String subPath) {
-		return JarHelpers.createResourceMount(IComputerEnvironment.class, domain, subPath);
+		subPath = "assets/" + domain + "/" + subPath;
+
+		try {
+			return new JarMount(MountHelpers.mainJar, subPath);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }
